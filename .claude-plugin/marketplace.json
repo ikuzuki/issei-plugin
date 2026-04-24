@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "issei-plugin",
-      "source": ".",
+      "source": "./",
       "description": "Issei's personal Claude Code setup — skills, slash commands, and MCP wiring for knowledge-mcp.",
       "version": "0.1.0"
     }
