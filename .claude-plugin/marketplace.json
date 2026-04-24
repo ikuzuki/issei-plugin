@@ -1,0 +1,15 @@
+{
+  "name": "issei-plugin",
+  "owner": {
+    "name": "Issei Kuzuki",
+    "email": "issei@curveanalytics.co.uk"
+  },
+  "plugins": [
+    {
+      "name": "issei-plugin",
+      "source": ".",
+      "description": "Issei's personal Claude Code setup — skills, slash commands, and MCP wiring for knowledge-mcp.",
+      "version": "0.1.0"
+    }
+  ]
+}
