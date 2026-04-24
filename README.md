@@ -2,7 +2,7 @@
 
 Personal Claude Code plugin. Bundles Issei's skills, slash commands, and the MCP wiring for [`knowledge-mcp`](https://github.com/ikuzuki/knowledge-mcp) into one installable unit.
 
-Private by design — this repo encodes personal taste and voice, not generic infra. Generic things live in `knowledge-mcp`.
+Public so Claude Desktop and Cowork can fetch it without an org-level GitHub connector. Nothing in here is secret — the skills encode personal voice and workflow preferences, the commands reference env vars not paths, and the MCP config is generic. Genuinely private content lives in the separate `knowledge-vault` repo.
 
 ## What's in it
 
