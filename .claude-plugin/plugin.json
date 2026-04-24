@@ -1,0 +1,10 @@
+{
+  "name": "issei-plugin",
+  "version": "0.1.0",
+  "description": "Issei's personal Claude Code setup — skills, slash commands, and MCP wiring for knowledge-mcp.",
+  "author": {
+    "name": "Issei Kuzuki",
+    "email": "issei@curveanalytics.co.uk"
+  },
+  "homepage": "https://github.com/ikuzuki/issei-plugin"
+}

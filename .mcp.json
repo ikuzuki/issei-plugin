@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "knowledge": {
+      "command": "${KNOWLEDGE_MCP_BIN}",
+      "env": {
+        "KNOWLEDGE_MCP_VAULT_PATH": "${KNOWLEDGE_MCP_VAULT_PATH}"
+      }
+    }
+  }
+}
