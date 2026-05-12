@@ -16,10 +16,18 @@ literally reads all of it, checks for the failure modes below, and reports.
    what that file says, not from independent invention. If the schema and
    this skill disagree, the schema wins.
 
-2. **Enumerate the vault.** Glob `knowledge-vault/**/*.md`. Skip
-   `**/README.md` for some checks (they describe folders, they don't
-   belong to the folder's content) but include them for link-validity
-   checks.
+2. **Enumerate the curated vault.** Glob `knowledge-vault/**/*.md` but
+   **exclude `knowledge-vault/reference/**`** — that path is the
+   gitignored auto-mirror of Confluence + GitHub produced by
+   `harvest/scripts/sync_reference.py`. It's reference material, not
+   curated content; linting it produces noise on files Issei doesn't
+   own. Also skip `**/README.md` for some checks (they describe folders,
+   they don't belong to the folder's content) but include them for
+   link-validity checks.
+
+   Note the singular/plural distinction: `reference/` (singular,
+   gitignored, auto-mirror) is excluded. `references/` (plural, curated
+   external pointers — part of the schema) is included.
 
 3. **Read every note.** Yes, all of them. Whole-file reads, not chunks.
    Track:
