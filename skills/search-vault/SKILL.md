@@ -10,6 +10,13 @@ no index, no MCP server. The vault is small enough (~few hundred notes)
 that whole-file reads on the relevant subset beat any retrieval layer at
 this scale.
 
+**Do not reach for `mcp__knowledge__*` tools.** They were deleted on
+2026-05-12 and will return "no matching deferred tools found" or
+errors. Do not ToolSearch for them either — they are gone. This skill
+exists *because* the MCP was retired; using it via Glob/Grep/Read is
+the entire point. See `knowledge-vault/decisions/2026-05-12-vault-is-markdown-no-index.md`
+for the rationale.
+
 ## Process
 
 1. **Read the schema if you haven't this session.** Open
