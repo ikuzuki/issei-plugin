@@ -168,17 +168,28 @@ Quick pass before showing the user:
 
 If any of these are off, rewrite before showing.
 
-## PR review comments — see the vault
+## Code-shaped artefacts — see the vault
 
-GitHub PR review comments have their own shape distinct from Slack /
-email / Jira. Two modes (conversational vs structured from the
-code-review skill), a specific batch-same-comment pattern, a `nit:`
-convention, and release-please-adjacent calls (breaking-change,
-Conventional Commits PR title). When drafting a PR review comment in
-Issei's voice, read
-`knowledge-vault/voice/code-review.md` (relative path from this
-plugin: `../../../knowledge-vault/voice/code-review.md`) before
-imitating — the annotated examples carry the specific phrasings.
+Two artefact-specific notes in the vault that override the general
+voice when drafting code-adjacent content:
+
+- **PR review comments** — `knowledge-vault/voice/code-review.md`
+  (relative path from this plugin:
+  `../../../knowledge-vault/voice/code-review.md`). Two modes
+  (conversational vs structured from the code-review skill), a
+  batch-same-comment pattern, the `nit:` convention, and
+  release-please-adjacent calls (breaking-change,
+  Conventional Commits PR title).
+- **Code explainers** — `knowledge-vault/voice/explaining-code.md`
+  (`../../../knowledge-vault/voice/explaining-code.md`). PR
+  descriptions, Slack "how does this work" replies, Confluence
+  "Behaviour" sections. Self-explainer prompts (well-evidenced)
+  vs team-facing explainers (less evidenced — note flags what's
+  inferred).
+
+When drafting either kind of artefact, read the vault note before
+imitating — the annotated examples carry phrasings the general
+voice guidance above doesn't capture.
 
 ## Scope
 
