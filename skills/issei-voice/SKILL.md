@@ -168,6 +168,18 @@ Quick pass before showing the user:
 
 If any of these are off, rewrite before showing.
 
+## PR review comments — see the vault
+
+GitHub PR review comments have their own shape distinct from Slack /
+email / Jira. Two modes (conversational vs structured from the
+code-review skill), a specific batch-same-comment pattern, a `nit:`
+convention, and release-please-adjacent calls (breaking-change,
+Conventional Commits PR title). When drafting a PR review comment in
+Issei's voice, read
+`knowledge-vault/voice/code-review.md` (relative path from this
+plugin: `../../../knowledge-vault/voice/code-review.md`) before
+imitating — the annotated examples carry the specific phrasings.
+
 ## Scope
 
 This skill covers short-to-medium async comms — Slack messages, emails, Jira / PR comments, thread replies, team announcements. It does NOT cover long-form content (blog posts, LinkedIn articles, formal internal docs). The voice samples don't calibrate those with confidence. If asked to draft long-form in Issei's voice, flag the limitation and ask for more samples before attempting.
