@@ -186,6 +186,12 @@ voice when drafting code-adjacent content:
   "Behaviour" sections. Self-explainer prompts (well-evidenced)
   vs team-facing explainers (less evidenced — note flags what's
   inferred).
+- **Personal-project copy** —
+  `knowledge-vault/voice/personal-projects.md`
+  (`../../../knowledge-vault/voice/personal-projects.md`). READMEs,
+  LinkedIn, recruiter conversations, multi-persona evaluation
+  prompts. Distinct enough from team-internal comms that the
+  default voice rules need this overlay before drafting.
 
 When drafting either kind of artefact, read the vault note before
 imitating — the annotated examples carry phrasings the general
