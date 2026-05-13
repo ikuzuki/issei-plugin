@@ -9,7 +9,7 @@
       "name": "issei-plugin",
       "source": "./",
       "description": "Issei's personal Claude Code setup — vault skills (search-vault, distil-vault, lint-vault) plus voice and meta skills (issei-voice, meeting-agenda, drawio-diagrams, skill-creator). Pure filesystem, no MCP, no slash commands.",
-      "version": "0.2.0"
+      "version": "0.2.1"
     }
   ]
 }
