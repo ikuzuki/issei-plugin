@@ -25,7 +25,8 @@ for the rationale.
 
 2. **Start broad with Glob + Grep.** For a query like "what did I decide
    about X":
-   - Glob `knowledge-vault/**/*.md`
+   - Glob `knowledge-vault/**/*.md` excluding `knowledge-vault/reference/**`
+     (the curated layer)
    - Grep the keyword(s) and key entities across that file set
    - Use `output_mode: "files_with_matches"` first to see the shape of
      the result, then `content` with context if needed
@@ -35,16 +36,34 @@ for the rationale.
    queries, `patterns/` for technical patterns) and follow links from
    there. The hub-and-spoke structure is deliberate.
 
-3. **Read whole files for the top hits.** Not chunks. Pick 3–5 files
+3. **If the curated layer doesn't have it, fall back to the session
+   archive.** The gitignored `knowledge-vault/reference/sessions/YYYY-Www/`
+   tree carries the full content of every harvested chat work-thread
+   (~90 per quarter). Use this when:
+   - The user asks "what did I figure out in that session about X"
+   - The curated layer turns up nothing or only a thin pointer
+   - You need the actual back-and-forth, not just a distilled overlay
+
+   Filename pattern: `YYYY-MM-DD--<cwd-slug>--<short-id>.md`. Frontmatter
+   has `title`, `started_at`, `cwd`, `surface`, `files_touched`.
+   Grep across `reference/sessions/**/*.md` for keyword hits; Read the
+   relevant files in full. These files can be large (up to ~200k chars).
+   Read with offset/limit if you only need a section.
+
+   Do not propose distilling content from `reference/sessions/` into the
+   curated layer in the same turn — that's a deliberate `distil-vault`
+   call the user makes when they decide a session is worth promoting.
+
+4. **Read whole files for the top hits.** Not chunks. Pick 3–5 files
    that look most relevant from the Grep output and Read them in full.
    The whole point of the no-index design is that you have the room to
    load real context.
 
-4. **Follow links.** If a relevant note references another note via
+5. **Follow links.** If a relevant note references another note via
    markdown link or `links` frontmatter, read those too if they look
    plausibly useful. The vault is structured for navigation.
 
-5. **Answer with citations.** Format each cited note as a clickable
+6. **Answer with citations.** Format each cited note as a clickable
    relative path on its own line, with a one-sentence summary of what
    it contributed:
 
@@ -58,7 +77,7 @@ for the rationale.
    <answer that synthesises across them>
    ```
 
-6. **Be honest about negative results.** If nothing in the vault matches,
+7. **Be honest about negative results.** If nothing in the vault matches,
    say so plainly. Don't fabricate. Don't gesture at content that isn't
    there. "I didn't find anything in the vault on X — closest match is
    <Y>, which is adjacent but not the same thing" is a fine answer.
