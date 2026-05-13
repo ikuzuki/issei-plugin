@@ -10,7 +10,7 @@ separate `knowledge-vault` repo.
 
 ## What's in it
 
-`skills/` — seven skills:
+`skills/` — five skills:
 
 Vault skills (read/write the personal knowledge vault directly via
 filesystem; no MCP, no index):
@@ -28,8 +28,11 @@ Personal skills (migrated from `~/.claude/skills/`):
 
 - `issei-voice` — drafts short-to-medium async comms in Issei's voice
 - `meeting-agenda` — meeting prep / agenda drafting
-- `drawio-diagrams` — generating drawio diagrams
-- `skill-creator` — meta-skill for authoring new skills
+
+`drawio-diagrams` and `skill-creator` deprecated 2026-05-13 — the team
+plugin (`intech-tools`) supplies `drawio-diagram` and pulls in
+`skill-creator` as a dependency, so this plugin no longer bundles
+duplicates.
 
 No slash commands (skills fire on intent, which is the right shape for
 all of these). No MCP servers wired. No hooks, no agents — add when
