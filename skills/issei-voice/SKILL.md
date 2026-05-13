@@ -84,6 +84,24 @@ British spellings throughout: organise, utilise, prioritise, aligned, realise, b
 - Hyphens with spaces (` - `) for mid-sentence dashes, never em-dashes.
 - Comma splices and slightly run-on sentences are fine — matches his actual pace of writing.
 
+## Density and reference hygiene
+
+The most common edit Issei makes to an AI-drafted message is **cutting**. Drafts that read fine to an AI come across as walls of text or over-specified to a human reader. The single biggest gap between AI voice and Issei voice is volume.
+
+**Conciseness over completeness.** A message to a colleague is not a design doc. Don't justify every position with a sub-clause. If the lean is "Cloud for PoC, Altinity later", say that — don't append "if data sovereignty / cost-at-scale / VPC adoption forces it". Recipients can ask for the reasoning if they want it. Drop adjectives, drop hedging sub-clauses, drop "or hybrid Z" qualifiers — just state the lean.
+
+**Reference hygiene.** One contextual reference is fine; a barrage is friction. AI drafts cite every doc, ADR, ticket, and meeting that shaped a point. Issei consolidates these. Instead of "ADR-006 proposes X, ADR-007 builds on that, the HLD says Y, the 22 April Q&A notes Z", he writes "early docs suggested X, some later docs suggest Y". Specifics come up in the reply if they matter. Don't make the recipient parse a bibliography to understand the question.
+
+**Don't quote source docs.** "ADR-014 leaves this open as 'possibly defect, possibly feature'" reads as documentation in a chat message. "ADR-014 leaves this open" is enough; if the recipient wants the framing, they can read their own ADR.
+
+**No ticket spam.** A ticket reference belongs at the top once or in a closing line, not woven into the body. "(CDT-182)" once in the opening, not three times.
+
+**Wall-of-text check.** Before sending, scan the message as a skim-reader would. Can the recipient extract each question without reading every word? A bullet packed with three sub-points + a parenthetical + a quote is still a wall.
+
+**Soft asks land better than demanding asks.** "Aligned?" is blunt. "any thoughts?" or just letting the position land without a follow-up question reads as more collaborative. Reserve the direct "aligned?" for when you genuinely need a yes/no signal — and even then, "let me know if that's aligned" softens it.
+
+**Offer a sync when natural.** A long async question chain often benefits from "could put in some time if easier" near the close. Real Issei reaches for this when a thread has more than 2-3 questions, or when the answer might branch.
+
 ## Reasoning pattern
 
 When addressing a disagreement or nuanced point, Issei typically follows this sequence:
@@ -130,6 +148,48 @@ How Issei actually wrote it:
 
 The differences are subtle but matter: softer hedges, no meta-labels, natural "In my mind" / "in my view" framing, and a closing that invites future iteration rather than declaring a plan.
 
+---
+
+A second counter-example. AI-drafted message to a colleague (Matt) asking three architectural questions:
+
+> Hey Matt! Been digging into the data plane docs as part of the ClickHouse exploration (CDT-182) and want to sense check a few Q's before going deeper:
+>
+> Iceberg state of play - reading ADR-006, ADR-007, ADR-014 and the Data Plane HLD in sequence got me a bit confused. ADR-006 proposes Iceberg on S3 Tables for "all structured data assets" (still Proposed), ADR-007 builds its lineage chain on top of that, but the HLD picks plain Parquet for pre/post-enriched and the 22 April Q&A notes say "Iceberg dropped". Is the actual landing Parquet for pre/post-enriched + ClickHouse for analytics + Iceberg deferred? And if so, should ADR-006 be marked Superseded and ADR-007 refreshed?
+>
+> ClickHouse hosting flavour - my lean is Cloud for PoC and early production, with Altinity-managed-in-our-AWS as the graduation path if data sovereignty / cost-at-scale / VPC adoption forces it. Self-hosted EC2 I'd avoid at our team size, ops burden doesn't earn its keep until something specific forces it. Aligned, or strong opinion either way?
+
+Why it misses:
+
+- Five document references in one paragraph. Bibliographic.
+- Quotes the Q&A transcript directly.
+- Asks two questions in the first bullet ("Is X correct?" + "should ADR-006 be marked Superseded?").
+- Justifies the hosting lean with a parenthetical compound condition ("if data sovereignty / cost-at-scale / VPC adoption forces it").
+- "Sense check a few Q's before going deeper" — Issei would just open the conversation.
+- "Aligned, or strong opinion either way?" — blunter than needed.
+
+How Issei actually rewrote it:
+
+> Hey Matt, hope you're well! I've been digging into the data plane docs as part of setting up ClickHouse and had a couple of questions/thoughts which I thought might be worth passing by you:
+>
+> Iceberg state of play - early docs suggested Iceberg/S3 tables was something we were keen on for data lineage but some later meeting transcripts/docs suggest we've dropped Iceberg in favour of plain Parquet for pre/post-enriched + ClickHouse for analytics. Is this correct? What was the reasoning behind this?
+>
+> ClickHouse hosting flavour - not sure if you had any strong opinions on this, but some options are: ClickHouse Cloud, Altinity-on-our-AWS, Self hosted on EC2. My lean was ClickHouse Cloud for PoC/early production with Altinity later to scale (especially given we're deferring VPCs for now).
+>
+> [...]
+>
+> Let me know if you have any thoughts on these! Could also put in some time if that's easier
+
+The pattern:
+
+- Doc references collapsed to "early docs / some later docs" — no enumerated ADR numbers.
+- Quote removed entirely.
+- One question per bullet, not two stacked.
+- Hosting options listed plainly; the lean stated without compound justification.
+- "not sure if you had any strong opinions" is softer than "Aligned, or strong opinion either way?".
+- Closes with an offer to sync, not a question that demands an answer.
+
+The AI draft was roughly **twice as dense** as the rewrite for the same content. Density is the giveaway.
+
 ## Positive examples
 
 A technical reply acknowledging a teammate's point:
@@ -156,6 +216,7 @@ Notice: the "Hmmm good question -" opening, the `in my view` / `I think` framing
 
 Quick pass before showing the user:
 
+**Voice**
 - No em-dashes? (Use ` - ` instead)
 - No meta-framing labels like "Zooming out:", "Bottom line:", "At a high level:"?
 - Opening matches one of the patterns (`Hey [name]!` / `Hey all` / `Morning [name]!`)?
@@ -166,12 +227,22 @@ Quick pass before showing the user:
 - Corporate-speak excised? (No "leverage", "circle back", "synergy", "utilise the capabilities of")
 - Hedging by frame, not by weakening the claim itself?
 
-If any of these are off, rewrite before showing.
+**Density (the most common failure mode)**
+- Could the message be 30%+ shorter without losing the core ask?
+- One question per bullet, not two stacked?
+- No doc / ADR / ticket reference appearing more than once?
+- No direct quotes from source docs?
+- No compound parenthetical justifications ("(if X / Y / Z forces it)")?
+- Asks are soft ("let me know your thoughts", "any priors?") rather than blunt ("Aligned?")?
+- If the thread might branch, is there an "could put in some time if easier" offer?
+- Does the message read as something a busy colleague would skim cleanly, or as documentation?
+
+If any of these are off, rewrite before showing. Cutting is usually the answer.
 
 ## Code-shaped artefacts — see the vault
 
-Two artefact-specific notes in the vault that override the general
-voice when drafting code-adjacent content:
+Three artefact-specific notes in the vault that override the general
+voice when drafting code-adjacent or personal-project content:
 
 - **PR review comments** — `knowledge-vault/voice/code-review.md`
   (relative path from this plugin:
@@ -193,7 +264,7 @@ voice when drafting code-adjacent content:
   prompts. Distinct enough from team-internal comms that the
   default voice rules need this overlay before drafting.
 
-When drafting either kind of artefact, read the vault note before
+When drafting any of these artefacts, read the vault note before
 imitating — the annotated examples carry phrasings the general
 voice guidance above doesn't capture.
 
