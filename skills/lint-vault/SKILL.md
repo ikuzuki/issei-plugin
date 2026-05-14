@@ -61,12 +61,32 @@ literally reads all of it, checks for the failure modes below, and reports.
      doesn't include A
    - Orphan page — note has zero inbound links from anywhere in the
      vault. Acceptable for some `daily/` and `decisions/` entries;
-     suspicious elsewhere
+     suspicious elsewhere. For non-hub pages outside `daily/` and
+     `decisions/`, orphan status is a real findng — surface with
+     suggested hub to link from
    - Contradiction between a `decisions/` note and later
      `patterns/` / `projects/` content. Flag for human review — do
      not auto-resolve
    - Note written directly to `daily/` outside the harvest format
      (manual edits to weekly rollups are fine; new files are not)
+   - **Stale temporal reference.** Note contains phrases like "next
+     week", "this sprint", "currently", "this quarter", "in the
+     coming days" combined with a `created` date more than 6 weeks
+     old. Likely the content has aged out of accuracy. Flag with the
+     specific phrase and the staleness window
+   - **Stale "TBC / TBD / open question" markers.** Note flags
+     something as TBC / TBD / "to be decided" / "open question" and
+     was last touched more than 3 months ago. Either resolve and
+     update, or migrate the question into a `questions/` note (if
+     the vault has that folder), or accept the marker is permanent
+     and rephrase to remove the implicit "this will be answered
+     soon" framing
+   - **Dead person reference.** Note references a colleague by name
+     in a "what they own / what they're working on" framing, but
+     no `people/<name>.md` exists. Either add the people note or
+     soften the framing. (Note: this catches the easy case; doesn't
+     detect colleagues who've left the team — that needs a
+     deliberate list to lint against, which doesn't exist yet)
 
    **Low severity:**
    - H1 doesn't match `title` frontmatter
@@ -77,6 +97,11 @@ literally reads all of it, checks for the failure modes below, and reports.
      edit
    - Note that should plausibly cross-link to a hub (`projects/<x>.md`)
      but doesn't
+   - **Unsourced claim in a `patterns/` or `strategy/` note.**
+     Patterns and strategy notes should be grounded in a source
+     (Confluence link, decision, prior project). A pattern note with
+     no Source footer and no inline citations is suspicious — it
+     might still be right but the provenance has decayed
 
 5. **Report.** Group by severity, then by folder. Each finding is one
    bullet:
@@ -128,3 +153,11 @@ literally reads all of it, checks for the failure modes below, and reports.
 - When the vault "feels stale" — broken navigation, dead links
 - Never on a schedule unless Issei sets one explicitly. Distillation and
   lint are deliberate operations, not background jobs.
+
+## Relationship to weekly-vault-review
+
+The `weekly-vault-review` skill runs a *fast* lint over content created
+or modified in the past week — catches new-content hygiene before it
+accumulates. This skill is the full pass: every note, every rule. Run
+this one quarterly or after structural changes; let the weekly review
+catch new content.

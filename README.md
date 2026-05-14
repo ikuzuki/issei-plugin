@@ -10,7 +10,7 @@ separate `knowledge-vault` repo.
 
 ## What's in it
 
-`skills/` — five skills:
+`skills/` — eight skills:
 
 Vault skills (read/write the personal knowledge vault directly via
 filesystem; no MCP, no index):
@@ -18,11 +18,24 @@ filesystem; no MCP, no index):
 - `search-vault` — find relevant notes by Glob + Grep + Read against
   `knowledge-vault/`. Fires on "what do I have on X", "what did I write
   about Y", etc.
+- `research-vault` — answer research-shaped questions by scanning the
+  vault first, identifying gaps, then filling only the gaps via
+  external sources (WebSearch / WebFetch / Atlassian MCP / gh /
+  Context7). Internal-vs-external provenance explicitly marked.
+- `challenge-vault` — devil's advocate. Argues against a stated
+  position using vault evidence (decisions, patterns, prior stance).
+  Read-only.
 - `distil-vault` — promote raw material (transcripts, harvest outputs,
   inbox notes) into the vault. Writes the new note and updates 5–15
   neighbouring pages with backlinks.
 - `lint-vault` — whole-vault consistency pass. Flags broken links,
-  missing backlinks, stale references, orphans, contradictions.
+  missing backlinks, stale references, orphans, stale temporal
+  references, stale TBC/TBD markers, dead person references,
+  contradictions.
+- `weekly-vault-review` — read-only weekly cadence report. Surfaces
+  what changed in the vault this week, pending inbox/harvest items,
+  themes, light lint findings, suggested actions. Designed to run on
+  a weekly schedule.
 
 Personal skills (migrated from `~/.claude/skills/`):
 
@@ -82,12 +95,13 @@ issei-plugin/
 ├── .claude-plugin/plugin.json
 ├── skills/
 │   ├── search-vault/SKILL.md
+│   ├── research-vault/SKILL.md
+│   ├── challenge-vault/SKILL.md
 │   ├── distil-vault/SKILL.md
 │   ├── lint-vault/SKILL.md
+│   ├── weekly-vault-review/SKILL.md
 │   ├── issei-voice/SKILL.md
-│   ├── meeting-agenda/SKILL.md
-│   ├── drawio-diagrams/SKILL.md
-│   └── skill-creator/SKILL.md
+│   └── meeting-agenda/SKILL.md
 ├── agents/           # empty; add as needed
 ├── commands/         # empty; skills replaced slash commands
 └── README.md
