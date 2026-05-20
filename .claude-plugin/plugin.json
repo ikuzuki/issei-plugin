@@ -1,6 +1,5 @@
 {
   "name": "issei-plugin",
-  "version": "0.4.0",
   "description": "Issei's personal Claude Code setup. Vault skills (search-vault, distil-vault, lint-vault, challenge-vault, research-vault, weekly-vault-review), voice skills (issei-voice for short-form chat, blog-voice for long-form technical writing), and meeting-agenda. Pure filesystem, no MCP, no slash commands. drawio-diagrams and skill-creator dropped in 0.3.0; covered by the team plugin.",
   "author": {
     "name": "Issei Kuzuki",
