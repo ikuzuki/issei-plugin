@@ -99,8 +99,15 @@ question — never guess at the source.
    `inbox/processed/YYYY-MM/<file>`. The audit trail matters; don't
    delete sources.
 
-10. **Report.** One short message: path of the new note, count of
-    neighbours updated, anything you punted on or noticed in passing.
+10. **Commit.** Stage the new note + neighbour edits + (if moved) the
+    inbox source. Commit with message `distil: <slug-of-new-note>`
+    following house convention (terse, imperative, lowercase first
+    word, no emoji, no Claude co-author). Don't push - Issei pushes
+    when state should leave the machine.
+
+11. **Report.** One short message: path of the new note, count of
+    neighbours updated, commit hash, anything you punted on or
+    noticed in passing.
 
 ## Anti-patterns
 

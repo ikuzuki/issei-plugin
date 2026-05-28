@@ -87,6 +87,30 @@ literally reads all of it, checks for the failure modes below, and reports.
      soften the framing. (Note: this catches the easy case; doesn't
      detect colleagues who've left the team — that needs a
      deliberate list to lint against, which doesn't exist yet)
+   - **Stale synthesis.** A `strategy/`, `patterns/`, `playbooks/`,
+     or `team-enablement-notes/` page with `status: current` and
+     `updated` more than 90 days old. Surface for re-affirmation,
+     supersession, or content refresh. Don't auto-flip status.
+   - **Missing synthesis status.** Same folders, page without a
+     `status:` field. Treat as a first-time-tagging finding;
+     suggest `status: current` and `updated: <created or today>`.
+   - **Source-page hygiene.** A `references/<x>.md` page missing
+     required source-page frontmatter (`upstream`, `last_synced`,
+     `ingested`). Schema mandates these per the source-page rule
+     in `knowledge-vault/CLAUDE.md`.
+   - **Stale source sync.** A `references/<x>.md` page with
+     `last_synced` more than 60 days old. Suggest a manual re-sync
+     (re-read the upstream, bump `last_synced`). If the upstream is
+     gone, switch the page to mirrored body and note the deprecation.
+   - **Emergent hub candidate.** A `tags:` value appearing on 4+
+     curated notes with no hub of the same name. Strong signal
+     that an area has accumulated enough material to deserve a
+     stable entry point. Output: the tag, the files using it, and
+     a suggested hub path (likely `projects/<tag>.md`,
+     `strategy/<tag>.md`, or `patterns/<tag>.md` depending on
+     content shape). The emergent-pattern detector lives here
+     because it's structural and quarterly-paced; week-level theme
+     emergence stays in `weekly-vault-review`.
 
    **Low severity:**
    - H1 doesn't match `title` frontmatter
@@ -124,7 +148,42 @@ literally reads all of it, checks for the failure modes below, and reports.
    On confirmation, make the edits in one pass using Edit. Don't fix
    piecemeal across multiple confirmations — that fragments the audit.
 
-7. **Don't auto-fix decision contradictions.** If a later note disagrees
+7. **Regenerate `knowledge-vault/index.md`.** Walk the curated layer
+   (exclude `reference/` and folder READMEs) and produce a fresh
+   catalog grouped by folder. Format:
+
+   ```
+   # knowledge-vault index
+
+   Last generated: YYYY-MM-DD by lint-vault.
+   Total notes: N.
+
+   ## decisions/
+   - `decisions/YYYY-MM-DD-<slug>.md` — <title> [<status>]
+   - ...
+
+   ## projects/
+   - `projects/<slug>.md` — <title>
+   - ...
+
+   [continue per folder]
+   ```
+
+   Sort within each folder: date-prefixed files reverse-chronological,
+   others alphabetical by filename. Always run, even when no fixes
+   were applied - new files may have arrived since last lint. Cheap
+   operation; no need to gate.
+
+8. **Commit.** Stage approved fixes + regenerated `index.md` in one
+   commit. Message: `lint: <short summary>` (e.g.
+   `lint: fix 12 broken links + refresh index`, or
+   `lint: refresh index` when nothing else changed). Follow house
+   convention (terse, imperative, lowercase first word, no emoji, no
+   Claude co-author). Don't push - Issei pushes when state should
+   leave the machine. If nothing actually changed (no fixes, index
+   already current), skip the commit.
+
+9. **Don't auto-fix decision contradictions.** If a later note disagrees
    with a `decisions/` entry, that might mean: the decision is
    superseded (write a new dated decision), the later note is wrong
    (edit the later note), or both are valid in different contexts (no

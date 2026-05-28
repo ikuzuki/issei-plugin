@@ -62,12 +62,45 @@ Do not fire this skill for ad-hoc vault questions — those are
 
    This is the "what's pending distillation" list.
 
-5. **Survey the harvest pipeline output.** Glob `harvest/` for any
-   parquet files or session dumps. If the harvest scripts have run
-   recently, identify candidate sessions / extracts that haven't
-   been promoted into the vault. Note: don't read parquet directly;
-   identify files and freshness only. Distillation from harvest is a
-   `distil-vault` call.
+5. **Triage the harvest output — top promotion candidates.** This is
+   the harvest → distil gate. Without it, the harvest grows faster
+   than `distil-vault` keeps up, and the curated layer falls behind.
+
+   Scope: glob `knowledge-vault/reference/sessions/YYYY-Www/` for
+   the current week's session files (and last week's if the review
+   window covers it). Also glob `harvest/` for any pending parquet
+   or extracts that haven't yet been folded into the session
+   archive.
+
+   Rank by promotion-worthiness. Read the YAML frontmatter of each
+   session file (cheap — just the block, not the body) and score
+   on these signals:
+
+   - **Length.** Sessions over ~5000 chars carry real depth. Short
+     ones are usually one-off Qs.
+   - **Files touched.** `files_touched: 3+` means cross-file work,
+     not a single-file edit. Multi-file sessions are usually
+     pattern-generating.
+   - **Topic novelty.** Grep the curated vault for the session's
+     main topic (extracted from title). If the topic appears in 0-1
+     curated notes, the session may be filling a real gap. If it
+     appears in 5+, the session is likely re-covering ground.
+   - **Decision / pattern signal.** Grep the session body (Read
+     with offset/limit if large) for phrases that signal durable
+     content: "decided", "going with", "rejected", "the pattern
+     is", "the trick is", "in retrospect", "i'd lean".
+
+   Score each session loosely high / medium / low across the four
+   signals combined. Read the top 3-5 candidates' first ~200 lines
+   to confirm; don't promote anything you can't justify.
+
+   Cap output at 5 candidates. More than 5 means the rank failed;
+   tighten it. Fewer than 3 is fine - the harvest doesn't always
+   produce promotables.
+
+   Don't read parquet directly; identify files and signals only.
+   Distillation from harvest is a `distil-vault` call the user
+   makes, not this skill.
 
 6. **Light pattern detection.** Look across this week's vault
    changes for:
@@ -122,9 +155,17 @@ Do not fire this skill for ad-hoc vault questions — those are
    - `inbox/<filename>` — <one-line guess at content>.
      Suggested target: `<folder>/<slug>.md`
 
-   ### Harvest (N items)
-   - `harvest/<filename>` — <freshness>.
-     Worth promoting: <yes/no with reason>
+   ### Harvest triage — top promotion candidates
+
+   1. `reference/sessions/YYYY-Www/<file>` — <one-line topic>.
+      Signal: <length / files-touched / topic-gap / decision-shape>.
+      Suggested target: `<folder>/<slug>.md`.
+      Suggested action: `distil-vault` on this with framing
+      "<short framing for what to extract>".
+   2. ...
+
+   (Cap at 5. "No promotion candidates this week" is a valid
+   output - say so explicitly rather than padding.)
 
    ## Open questions surfaced
 
