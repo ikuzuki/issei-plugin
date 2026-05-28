@@ -18,8 +18,8 @@ literally reads all of it, checks for the failure modes below, and reports.
 
 2. **Enumerate the curated vault.** Glob `knowledge-vault/**/*.md` but
    **exclude `knowledge-vault/reference/**`** — that path is the
-   gitignored auto-mirror of Confluence + GitHub produced by
-   `harvest/scripts/sync_reference.py`. It's reference material, not
+   gitignored auto-mirror of Confluence + GitHub produced by the
+   `harvest` skill's `sync_reference.py`. It's reference material, not
    curated content; linting it produces noise on files Issei doesn't
    own. Also skip `**/README.md` for some checks (they describe folders,
    they don't belong to the folder's content) but include them for
