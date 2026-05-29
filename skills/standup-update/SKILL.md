@@ -11,12 +11,40 @@ three-block standup in his voice. Display only — no file writes.
 
 ## The window
 
-"Yesterday" depends on today's weekday:
-- Tue–Fri → previous calendar date
-- Mon → Friday (skip Sat/Sun; weekend work not counted)
+The window starts at the previous business day at 00:00 local time and
+extends through *now* — inclusive of any work Issei has done this
+morning before running standup.
 
-Convert to absolute datetimes before filtering. Today's date is in the
-environment context.
+- Tue–Fri: window starts at yesterday 00:00 local
+- Mon: window starts at last Friday 00:00 local (skip Sat/Sun)
+
+Convert to absolute datetimes with timezone before filtering. Today's
+date is in the environment context; current time comes from
+`datetime.now()`. The "Yesterday" header in the output is the standup
+convention - it covers everything since the last standup, including
+this morning's pre-standup work.
+
+## Implementation reliability
+
+Two failure modes have bitten this skill in production; avoid both.
+
+**1. Don't author the session-scan script via Bash heredoc.** Anything
+non-trivial in Python (f-strings, escaped quotes, regex) wedges
+`cat << 'EOF' ... EOF`, especially on Windows where Bash sits over
+PowerShell. Write the script with the `Write` tool to e.g.
+`C:\tmp\standup_scan.py`, then run `python C:/tmp/standup_scan.py`.
+
+**2. Get cwd from the event JSON, not from the folder name.** Every
+event in a `.jsonl` carries a `cwd` field (e.g.
+`"C:\\Users\\IsseiKuzuki\\intech-ai-plugin"`). Trust that. *Do not*
+try to invert folder names like `c--Users-IsseiKuzuki-intech-ai-plugin`
+back into a path — the folder uses `-` as both path separator AND
+within-name character, so `replace("-", "/")` mangles `intech-ai-plugin`
+into `intech/ai/plugin` and the classifier silently drops every
+matching session.
+
+Normalise the event cwd before substring-matching:
+forward-slashes, lowercase, strip the `C:` drive prefix.
 
 ## Team vs personal — what counts
 
@@ -97,15 +125,32 @@ Flat JSONL events per session, one folder per cwd.
    regular offenders.
 7. Apply the team-vs-personal classification from the section above.
    Drop everything that classifies as personal, fpl, or excluded.
-8. For each remaining session, extract *intent*, not transcript:
-   - The first substantive user message (skip the wrappers above and
-     any `<command-name>` tags)
-   - Any `mark_chapter` titles — these signal phase boundaries within
-     a session and are gold for capturing what actually happened
-   - The last assistant turn only if it summarises a piece of work
+8. For each remaining session, extract the **in-window slice of
+   intent**, not the session-level intent. Issei has long-running
+   sessions that span weeks (the CDT ClickHouse PoC session has
+   4000+ events from 2026-05-11 to today). The session's *first* user
+   message describes what then-Issei wanted on the start date - that's
+   irrelevant to today's standup. Walk events in order, track current
+   timestamp, and only consider events whose timestamp is inside the
+   window:
+   - The first substantive in-window user message (skip wrappers and
+     `<command-name>` tags)
+   - Any `mark_chapter` titles inside the window
+   - In-window assistant turns that summarise shipped work (e.g.
+     benchmark results, table-state confirmations, "done -" recaps)
+   - In-window user-message count and tool-use density - high =
+     substantive work, low = pivot/clarification only
+
+   A long session that touched a topic for one in-window message and
+   then pivoted is not "a piece of work on that topic"; a long session
+   with 30 in-window user messages and a results-shaped assistant
+   summary at the end *is* substantive work, even if it opened months
+   ago with a generic "help me with X" message.
 
 Group by project. Don't quote raw session content; render the intent in
-Issei's voice.
+Issei's voice. When pulling substance from a long-running session, name
+the underlying piece of work (e.g. "CDT ClickHouse PoC"), not the
+session itself.
 
 ### GitHub PR activity
 
@@ -162,11 +207,40 @@ Blockers
 - <real blockers only, or omit the section>
 ```
 
-No preamble, no postamble, no closing line. Just the block.
+The date in the header is today's date - this is the standup *for*
+today, summarising work done since the last one. No preamble, no
+postamble, no closing line. Just the block.
 
-Voice: terse, lowercase-friendly, British English, no em-dashes (use
-` - `), no corporate-speak, no "I successfully completed" / "I worked
-on". State what shipped or moved. Consult the `issei-voice` skill if
+### Substance, not labels
+
+Every bullet must read as descriptive English to a teammate who hasn't
+seen the ticket or PR. Lead with what the work *does*; put ticket
+keys and PR numbers in parentheses, not in front. Sources for the
+substance:
+
+- the PR title (already in the `gh search` JSON)
+- the branch name (`CDT-244-pr-digest-cron` → "CDT PR digest cron")
+- the first substantive user message in the session
+- chapter markers (`mark_chapter` titles) when present
+
+Examples:
+
+- Bad: `shipped CDT-244 + CDT-181`
+- Good: `shipped the daily CDT PR digest as a Cloud Claude routine ([PR #28], CDT-244 + CDT-181)`
+- Bad: `reviewed [PR #156]`
+- Good: `reviewed Rad's FoDI discovered-entities stream work ([intech-enrich#156])`
+- Bad: `did some Confluence review`
+- Good: `honest review pass on the Confluence Guidelines page, cross-referenced with my vault`
+
+If you genuinely can't find substance for a session (one-line question,
+no artefact), drop it - don't bullet "asked a question about X". The
+standup is shipping evidence, not session inventory.
+
+### Voice
+
+Terse, lowercase-friendly, British English, no em-dashes (use ` - `),
+no corporate-speak, no "I successfully completed" / "I worked on".
+State what shipped or moved. Consult the `issei-voice` skill if
 phrasing feels off.
 
 ## Anti-patterns
@@ -192,4 +266,32 @@ phrasing feels off.
 - Inventing Today. If yesterday ended mid-work, Today is finishing it.
 - Treating frustration as a blocker. "This is annoying" is not a
   blocker; "waiting on Adele's review" is.
-- Writing anything to a file. This skill is display-only.
+- Writing anything to a file. This skill is display-only. (Exception:
+  the throwaway session-scan `.py` at `C:\tmp\` is fine - that's
+  scaffolding, not output.)
+- Inlining the session-scan Python via Bash heredoc. Use the Write
+  tool to drop a `.py` file instead - heredocs wedge on f-strings and
+  escapes.
+- Deriving cwd from the folder name. The `cwd` field is on every
+  event; read it from there. Folder-name inversion is ambiguous and
+  silently misclassifies every team session.
+- Stopping the window at yesterday's midnight. The window extends
+  through *now* - this morning's work counts.
+- Bulleting ticket or PR numbers without context. "shipped CDT-X" is
+  useless without saying what X is. The bullet must read as English to
+  a teammate who hasn't seen the ticket.
+- Reading only the first user message to judge a session. Issei's
+  multi-week CDT ClickHouse PoC session opens with "So I'm just
+  onboarding to start working on the data plane for CDT" - that's
+  from weeks ago. Yesterday's slice inside the same session has the
+  actual standup substance (benchmark results, schema decisions,
+  questions for Matt). Walk in-window events; ignore the opener if
+  it's outside the window.
+- Dismissing a long session as one-line work. A 4000-event,
+  30+-in-window-user-message session is the day's primary work, not
+  a footnote. Length and density beat first-message inference.
+- Treating vault-distillation of *team-shipping* substance as personal
+  admin. Distilling the ClickHouse exploration into a vault pattern +
+  ADR-lite mirror is team work captured locally - the underlying
+  piece of work belongs in the standup (named as the underlying
+  thing, e.g. "ClickHouse PoC"), even if the artefact is a vault note.
