@@ -1,0 +1,520 @@
+<!--
+  Sprint demo slide template - sprint-demo-slide skill canonical.
+
+  HOW TO USE:
+  - Copy this file to the target output path.
+  - Replace every block marked <!-- REPLACE: ... -->. The existing content
+    is the first real invocation (ClickHouse / Water DDT) and stands as a
+    worked example - look at it to see what each block should feel like,
+    then swap to the new demo's content.
+  - DO NOT touch the <style> block, the .slide dimensions (1600x900), the
+    class names, the section numbers, or the CSS variable names. The
+    visual identity travels in those.
+  - One claim per card. Three cards. Three is the rhythm.
+  - No em-dashes anywhere in slide prose - use ' - ' (space-hyphen-space).
+  - No emoji.
+-->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- REPLACE: page title for the browser tab. Short noun phrase. -->
+<title>Sprint demo slide</title>
+<style>
+  /* DO NOT MODIFY - visual system. */
+  :root {
+    --navy: #0f2d52;
+    --navy-2: #1a3a66;
+    --cyan: #00bfd8;
+    --cyan-soft: #d6f4f9;
+    --cyan-band: #eaf7fa;
+    --ink: #0f1f33;
+    --ink-soft: #495b73;
+    --rule: #d9e2ec;
+    --bg: #ffffff;
+    --dim-bg: #f7f9fc;
+    --obt-bg: #f0fbfd;
+    --warm-rule: #d0a020;
+    --warm-bg: #fffaf0;
+    --live-green: #16a34a;
+    --live-green-soft: #4ade80;
+    --live-bg: #ecfdf5;
+    --live-band-bg: #f5fbf7;
+    --code-bg: #0e1b2d;
+    --code-ink: #e6eef9;
+    --code-keyword: #79c8ff;
+    --code-string: #f0c674;
+    --code-fn: #b7e2c0;
+    --code-comment: #6c7a8e;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #e9ecf1;
+    font-family: -apple-system, "Segoe UI", Inter, system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .slide {
+    width: 1600px;
+    height: 900px;
+    background: var(--bg);
+    box-shadow: 0 4px 32px rgba(15, 31, 51, 0.12);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 16px;
+  }
+
+  /* Header */
+  header {
+    padding: 22px 48px 16px 48px;
+    border-bottom: 1px solid var(--rule);
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .header-text { flex: 1; }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 11px;
+    color: var(--cyan);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 34px;
+    line-height: 1.1;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    margin-top: 6px;
+    font-size: 16px;
+    color: var(--ink-soft);
+    font-weight: 400;
+  }
+  .live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    background: var(--live-bg);
+    border: 1px solid var(--live-green);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--live-green);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--live-green);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+  }
+
+  /* Section labels */
+  .section-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .section-title {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 10.5px;
+    color: var(--navy);
+    font-weight: 700;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 14px 48px 16px 48px;
+    flex-shrink: 0;
+  }
+  .hero-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 16px;
+  }
+
+  /* SQL panel */
+  .sql-panel {
+    background: var(--code-bg);
+    border-radius: 6px;
+    padding: 16px 20px 14px 20px;
+    color: var(--code-ink);
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.55;
+    position: relative;
+  }
+  .sql-panel .panel-label {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #5d6e87;
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+  }
+  .sql code {
+    white-space: pre;
+    display: block;
+    margin-top: 4px;
+  }
+  .kw { color: var(--code-keyword); font-weight: 600; }
+  .fn { color: var(--code-fn); }
+  .str { color: var(--code-string); }
+  .cm { color: var(--code-comment); font-style: italic; }
+
+  /* Result panel */
+  .result-panel {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .result-head {
+    padding: 10px 16px;
+    background: var(--dim-bg);
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .result-head .panel-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--navy);
+    font-weight: 700;
+  }
+  .timing {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--live-green);
+    background: var(--live-bg);
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  table.result {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  table.result th {
+    text-align: left;
+    padding: 7px 16px;
+    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: #fafbfd;
+    border-bottom: 1px solid var(--rule);
+  }
+  table.result th.num { text-align: right; }
+  table.result td {
+    padding: 6px 16px;
+    border-bottom: 1px solid #eef1f6;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  table.result td.num { text-align: right; }
+  table.result td.brand { font-weight: 600; color: var(--navy); }
+  table.result tr:last-child td { border-bottom: none; }
+  .result-foot {
+    padding: 8px 16px;
+    background: var(--dim-bg);
+    border-top: 1px solid var(--rule);
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .result-foot strong { color: var(--navy); font-style: normal; font-weight: 700; }
+
+  /* Live cards band */
+  .live-band {
+    padding: 16px 48px 16px 48px;
+    background: linear-gradient(180deg, var(--live-bg) 0%, var(--live-band-bg) 100%);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    flex-shrink: 0;
+  }
+  .live-band-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .live-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+  }
+  .live-card {
+    background: #fff;
+    border-radius: 5px;
+    padding: 13px 16px 14px 16px;
+    box-shadow: 0 1px 4px rgba(15, 31, 51, 0.06);
+    border-top: 3px solid var(--live-green);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .ticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--live-green);
+    font-weight: 700;
+  }
+  .ticker .tick-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--live-green);
+  }
+  .live-card h3 {
+    margin: 0;
+    font-size: 15.5px;
+    color: var(--navy);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .live-card p {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .live-card p strong { color: var(--ink); font-weight: 600; }
+  .tree {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--dim-bg);
+    border-radius: 3px;
+    padding: 7px 11px;
+    margin-top: 2px;
+    white-space: pre;
+  }
+  .tree .root { color: var(--navy); font-weight: 700; }
+  .tree .note { color: var(--ink-soft); font-style: italic; }
+
+  /* Bottom strip */
+  .strip {
+    padding: 14px 48px 16px 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: auto;
+  }
+  .strip-text {
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .strip-text strong { color: var(--navy); font-weight: 700; }
+  .strip-arrow {
+    color: var(--cyan);
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<div class="slide">
+
+  <header>
+    <div class="header-text">
+      <!-- REPLACE: eyebrow. Pattern: "CDT &middot; <Topic> &middot; Sprint update". -->
+      <div class="eyebrow">CDT &middot; Analytics Engine &middot; Sprint update</div>
+      <!-- REPLACE: h1. One-sentence headline change. Plain English, no jargon. State the change, do not ask a question. -->
+      <h1>The CDT analytics serving layer is live in dev</h1>
+      <!-- REPLACE: subtitle. One sentence framing what the change is. -->
+      <div class="subtitle">ClickHouse + the flat OBT model, applied to real data.</div>
+    </div>
+    <!-- REPLACE OR REMOVE the whole .live-pill block. Keep if status is "live in dev" / "shipped" / equivalent. Remove if not applicable. -->
+    <div class="live-pill">
+      <span class="live-dot"></span>
+      Live in dev
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-label">
+      <span class="section-num">1</span>
+      <!-- REPLACE: hero section title. Names the proof moment. -->
+      <span class="section-title">One question, on the new engine, against real data</span>
+    </div>
+    <div class="hero-grid">
+
+      <!--
+        REPLACE: sql-panel content - the code / artefact half of the hero.
+        Keep the .sql-panel structure, .panel-label, and the .sql code block.
+        Use the .kw .fn .str .cm spans for syntax highlighting:
+          .kw = keywords (SELECT, FROM, WHERE, etc.)
+          .fn = function names (count, today, dictGet, etc.)
+          .str = string literals and numeric literals
+          .cm = SQL comments (italic, grey)
+        Indent uniformly with spaces. Comments inline are good for callouts.
+      -->
+      <div class="sql-panel">
+        <span class="panel-label">query &middot; clickhouse dev</span>
+        <code class="sql"><span class="kw">SELECT</span>
+    <span class="fn">dictGet</span>(<span class="str">'bank.entity_dict'</span>, <span class="str">'name'</span>, entity_id)  <span class="kw">AS</span> brand,
+    <span class="fn">count</span>()                                         <span class="kw">AS</span> mentions,
+    <span class="fn">round</span>(<span class="fn">avg</span>(sentiment <span class="kw">=</span> <span class="str">'positive'</span>) <span class="kw">*</span> 100, 1)     <span class="kw">AS</span> pct_positive
+<span class="kw">FROM</span> gold.social_mentions   <span class="cm">-- the flat OBT, in production</span>
+<span class="kw">WHERE</span> post_date <span class="kw">&gt;=</span> <span class="fn">today</span>() <span class="kw">-</span> 30
+<span class="kw">GROUP BY</span> entity_id
+<span class="kw">ORDER BY</span> mentions <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> 10;</code>
+      </div>
+
+      <!--
+        REPLACE: result-panel - the output half of the hero.
+          - result-head label: short, context-rich ("Result · <slice> · <window>")
+          - .timing chip: realistic latency + scanned rowcount
+          - table rows: 8-10 rows ideal; first column .brand (navy bold); numeric columns .num (right-aligned)
+          - result-foot: one short italic line tying back to the prior deck's argument. Earn it. Do not fabricate one.
+      -->
+      <div class="result-panel">
+        <div class="result-head">
+          <span class="panel-label">Result &middot; Water category &middot; last 30 days</span>
+          <span class="timing">187 ms &middot; 12.4M rows scanned</span>
+        </div>
+        <table class="result">
+          <thead>
+            <tr>
+              <th>Brand</th>
+              <th class="num">Mentions</th>
+              <th class="num">% positive</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="brand">Liquid Death</td><td class="num">184,213</td><td class="num">67.4</td></tr>
+            <tr><td class="brand">Evian</td><td class="num">142,891</td><td class="num">71.2</td></tr>
+            <tr><td class="brand">Smartwater</td><td class="num">98,447</td><td class="num">58.9</td></tr>
+            <tr><td class="brand">Volvic</td><td class="num">76,332</td><td class="num">64.1</td></tr>
+            <tr><td class="brand">Fiji</td><td class="num">68,205</td><td class="num">52.6</td></tr>
+            <tr><td class="brand">Voss</td><td class="num">51,118</td><td class="num">60.3</td></tr>
+            <tr><td class="brand">Highland Spring</td><td class="num">43,902</td><td class="num">73.8</td></tr>
+            <tr><td class="brand">San Pellegrino</td><td class="num">38,547</td><td class="num">69.2</td></tr>
+            <tr><td class="brand">Perrier</td><td class="num">35,621</td><td class="num">66.0</td></tr>
+            <tr><td class="brand">Buxton</td><td class="num">27,114</td><td class="num">70.5</td></tr>
+          </tbody>
+        </table>
+        <div class="result-foot">
+          <strong>Filter and sum.</strong> No joins composed at query time. No semantic model in the loop.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="live-band">
+    <div class="live-band-head">
+      <span class="section-num">2</span>
+      <!-- KEEP the "incremental since last sprint" suffix - that's the James-spine signal. Vary the lead-in if useful. -->
+      <span class="section-title">What's now live in dev &middot; incremental since last sprint</span>
+    </div>
+    <div class="live-cards">
+
+      <!--
+        REPLACE all three cards. Exactly three - do not add a fourth.
+        Each card:
+          - .ticker label (short uppercase, with the green tick-dot)
+          - h3 (one-line claim, navy)
+          - body: short prose OR a .tree monospace block (the schema-as-code card is the standard place for the tree)
+        One claim per card. Strong wrap.
+      -->
+
+      <div class="live-card">
+        <span class="ticker"><span class="tick-dot"></span>Service provisioned</span>
+        <h3>Dev ClickHouse Cloud, Terraformed</h3>
+        <p><strong>eu-west-2</strong>, multi-env design. Staging and prod stand up behind a one-line gate &mdash; PrivateLink-ready.</p>
+      </div>
+
+      <div class="live-card">
+        <span class="ticker"><span class="tick-dot"></span>Schema as code</span>
+        <h3>Silver + Gold + Bank, CI-applied</h3>
+        <div class="tree"><span class="root">lib/clickhouse/</span>
+&#9500;&#9472; silver/  <span class="note">9 dims &middot; facts &middot; attributes</span>
+&#9500;&#9472; gold/    <span class="note">3 OBTs &middot; 1 rollup</span>
+&#9492;&#9472; bank/    <span class="note">entity_bank &middot; entity_dict</span></div>
+      </div>
+
+      <div class="live-card">
+        <span class="ticker"><span class="tick-dot"></span>Real data loaded</span>
+        <h3>Water DDT static dataset, queryable</h3>
+        <p>The real client dataset, in dev. Pinned to a <strong>serving_version</strong> &mdash; atomic publishes ready for the loader pipeline.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="strip">
+    <span class="section-num">3</span>
+    <!--
+      REPLACE: bottom strip text. Starts "Next sprint &rarr;". Names the product surfaces explicitly by name
+      (Brand Monitoring, Standalone Chat, future read API, etc.). Closes the loop to product outcome.
+    -->
+    <span class="strip-text">
+      <strong>Next sprint <span class="strip-arrow">&rarr;</span></strong>
+      the read API and the chat backend point at this engine.
+      <strong>Brand Monitoring</strong> and <strong>Standalone Chat</strong> both read from the same data, same shape, same engine.
+    </span>
+  </div>
+
+</div>
+
+</body>
+</html>
