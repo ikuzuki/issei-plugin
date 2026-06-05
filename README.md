@@ -54,6 +54,16 @@ Voice / doc skills:
 - `exec-summary` - condense a saturated spike / PoC / working doc into a
   tight, outcome-focused doc a human reads in ~5 minutes; anti-AI-slop
 
+Review skills:
+
+- `turbo-pr-review` - lightweight human-in-the-loop PR walkthrough.
+  Fetches the PR, explains it in plain English with jargon unpacked,
+  flags potential issues, drafts inline comments in Issei's voice,
+  surfaces drafts, posts only on explicit confirmation. Handles
+  multi-PR grouping when PRs share a ticket / contract / dependency.
+  Designed as a lighter alternative to `intech-tools:code-review` -
+  no specialist sub-agents, no auto-posting.
+
 Other:
 
 - `meeting-agenda` - meeting prep / agenda drafting
