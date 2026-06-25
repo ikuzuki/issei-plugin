@@ -144,6 +144,22 @@ def human_reviewer(pr):
     return (top.get("author") or {}).get("login"), top.get("state") == "CHANGES_REQUESTED"
 
 
+def has_human_review(pr):
+    """True if a non-self reviewer who is NOT the loop has reviewed this PR.
+    The loop is the first-pass reviewer - it leaves human-reviewed PRs alone and
+    attributes them to the human."""
+    return any(not MARKER_RE.search(r.get("body") or "") for r in non_self_reviews(pr))
+
+
+def approver(pr):
+    """Login of the latest non-self APPROVED reviewer, or None."""
+    apps = [r for r in non_self_reviews(pr) if r.get("state") == "APPROVED"]
+    if not apps:
+        return None
+    apps.sort(key=lambda r: r.get("submittedAt", ""), reverse=True)
+    return (apps[0].get("author") or {}).get("login")
+
+
 def key(repo, num):
     return f"{repo}#{num}"
 
@@ -152,7 +168,7 @@ def cmd_actionable():
     out = []
     for repo in REPOS:
         for pr in load_open(repo):
-            if is_team_pr(pr) and needs_review(pr):
+            if is_team_pr(pr) and needs_review(pr) and not has_human_review(pr):
                 out.append({
                     "key": key(repo, pr["number"]), "repo": repo, "number": pr["number"],
                     "url": pr["url"], "title": pr["title"],
@@ -181,7 +197,8 @@ def cmd_render(verdicts_path):
             v = verdicts.get(k, {})
             verdict = v.get("verdict")
             if pr.get("reviewDecision") == "APPROVED":
-                approved.append((repo, pr, v))
+                ap = approver(pr)
+                approved.append((repo, pr, {"reviewer": f"@{ap}" if ap else v.get("reviewer")}))
             elif verdict == "Needs Changes":
                 followup.append((repo, pr, v))
             elif verdict in ("Looks good", "Minor comments", "Needs Judgment"):

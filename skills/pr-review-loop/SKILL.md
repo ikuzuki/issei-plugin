@@ -44,7 +44,11 @@ digest. Lets the verifier be validated on real PRs before posting. Default OFF.
 
 `python build.py --actionable` returns JSON of the PRs needing review this run -
 new PRs, or PRs with new commits since the loop's last `reviewed-at` marker.
-Unchanged PRs are skipped here (the marker is the memory; no external store).
+Two classes are skipped here: PRs unchanged since the loop's last review (the
+marker is the memory; no external store), and PRs a human has already reviewed.
+The loop is the **first-pass reviewer** - it never reviews over a human. A
+human-reviewed PR keeps its human attribution in the digest (`reviewed: @<human>`
+or `approved: @<human>`), and the loop leaves it alone.
 
 ### 2. Cluster
 
@@ -54,21 +58,41 @@ Group PRs reviewed together by linked ticket - parse the branch name first
 explicit cross-PR dependencies. Cross-repo PRs for one ticket cluster together;
 unrelated PRs review independently.
 
-### 3. Review - fan out on a cheaper model
+### 3. Review - one code-review per cluster, model-tiered
 
-For each group, spawn a sub-agent with **`model: sonnet`** (not the
-orchestrator's Opus - running every review on Opus is the cost trap). Each
-sub-agent runs the `intech-tools:code-review` analysis flow, citing
-`intech-tools:coding-standards`, over the group's diff and returns findings
-categorised as real bugs / design questions / nits (secret scanning rides along
-in that flow - don't duplicate). It cross-references existing comments and does
-not re-raise a point already made or contradict a human reviewer without new
-reasoning. For stacked PRs, review only the incremental diff. The orchestrator
-keeps Opus for clustering, business-logic judgment, and synthesis.
+**Fan out per cluster, not per PR.** The unit of review is the cluster from
+step 2, so the number of reviews equals the number of clusters - related PRs
+(shared ticket / contract / dependency) are reviewed together for the cross-PR
+context, not as N isolated passes.
 
-Budget guard: cap PRs per run and sub-agents in flight; on the first run (whole
-backlog at once) cap hard and note what was deferred. Trip the budget - stop and
-report, don't spin.
+**Each cluster runs `intech-tools:code-review`.** This is non-negotiable: the
+review must be grounded in `intech-tools:coding-standards` via that skill's
+citation gate. A generic diff pass that skips the standards does not conform to
+Curve review and is not acceptable - using the real skill is the whole point.
+
+**Model tiering (three tiers):** the loop's own orchestrator stays on **Opus**
+(clustering, business-logic judgment, synthesis); each per-cluster
+`code-review` orchestrator runs on **Sonnet**; the specialist agents
+`code-review` spawns run on **Haiku** - except the bug-finding agents, which
+stay on Sonnet if Haiku proves too weak to catch real defects (tune from
+observed misses).
+
+**Worktree per cluster - required, not deferred.** `code-review` runs
+`gh pr checkout` and reads the working tree, so two clusters reviewing in
+parallel against one clone race on the branch checkout. Each cluster must run in
+its own `git worktree` (Osmani's worktrees component, load-bearing here). If
+worktree isolation isn't wired, **serialise the clusters** rather than racing
+them - never fan out checkout-based reviews against a shared working tree.
+
+The review cross-references existing comments and does not re-raise a point
+already made or contradict a human reviewer without new reasoning. For stacked
+PRs, review only the incremental diff.
+
+No per-run PR cap - review every actionable PR. The daily cadence keeps the
+changed set small and unchanged PRs are skipped via the marker, so there's no
+standing backlog to cap against. Bound only the fan-out concurrency (batch
+sub-agents, ~6 in flight) so you don't spawn dozens at once. If a sub-agent
+errors, record it and carry on - fail loud, never drop a PR silently.
 
 ### 4. Assign a verdict and compose
 
@@ -132,9 +156,9 @@ errors - fail loud.
 The autonomous, scheduled, consistent-bar review pass. NOT interactive
 walkthroughs (`turbo-pr-review`), multi-agent deep audits
 (`intech-tools:code-review`), or anything that approves/merges. A prototype in
-`issei-plugin`; promote to `intech-tools` before the team relies on it, at which
-point the fan-out should compose the team's `code-reviewer` agents rather than
-spawn inline.
+`issei-plugin`; promote to `intech-tools` before the team relies on it (the
+review logic already composes `intech-tools:code-review` per step 3, so the move
+is mostly relocation + distribution, not a redesign).
 
 ## References
 
