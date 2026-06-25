@@ -58,7 +58,7 @@ Group PRs reviewed together by linked ticket - parse the branch name first
 explicit cross-PR dependencies. Cross-repo PRs for one ticket cluster together;
 unrelated PRs review independently.
 
-### 3. Review - one code-review per cluster, model-tiered
+### 3. Review - one code-review per cluster, two-model
 
 **Fan out per cluster, not per PR.** The unit of review is the cluster from
 step 2, so the number of reviews equals the number of clusters - related PRs
@@ -70,19 +70,24 @@ review must be grounded in `intech-tools:coding-standards` via that skill's
 citation gate. A generic diff pass that skips the standards does not conform to
 Curve review and is not acceptable - using the real skill is the whole point.
 
-**Model tiering (three tiers):** the loop's own orchestrator stays on **Opus**
-(clustering, business-logic judgment, synthesis); each per-cluster
-`code-review` orchestrator runs on **Sonnet**; the specialist agents
-`code-review` spawns run on **Haiku** - except the bug-finding agents, which
-stay on Sonnet if Haiku proves too weak to catch real defects (tune from
-observed misses).
+**Model tiering (two tiers):** the loop's own orchestrator stays on **Opus**
+(clustering, business-logic judgment, synthesis); everything below it - each
+per-cluster `code-review` orchestrator and the specialist agents it spawns -
+runs on **Sonnet**. An earlier design split the specialists onto Haiku to save
+cost, but observed Sonnet cost per run is low enough that the saving doesn't
+justify the complexity, nor the risk of a weaker tier missing real defects (a
+reviewer is the wrong place to economise on bug detection). Keep specialists on
+Sonnet unless run cost becomes a real constraint.
 
-**Worktree per cluster - required, not deferred.** `code-review` runs
+**Isolated clone per cluster - required, not deferred.** `code-review` runs
 `gh pr checkout` and reads the working tree, so two clusters reviewing in
 parallel against one clone race on the branch checkout. Each cluster must run in
-its own `git worktree` (Osmani's worktrees component, load-bearing here). If
-worktree isolation isn't wired, **serialise the clusters** rather than racing
-them - never fan out checkout-based reviews against a shared working tree.
+its own fresh clone under `C:\tmp\pr-review-loop\clones\<repo>-<n>\` (a `git
+worktree` off an existing checkout works too, but a fresh clone is simpler and
+needs no local checkout to exist - the isolation is the point, not the
+mechanism). If isolation isn't wired, **serialise the clusters** rather than
+racing them - never fan out checkout-based reviews against a shared working
+tree. Clear the clones at the end of the run (see step 6).
 
 The review cross-references existing comments and does not re-raise a point
 already made or contradict a human reviewer without new reasoning. For stacked
@@ -138,6 +143,15 @@ and the verdict tag.** The PR title is the only link; there's no separate
 
 Always print a run summary too (shadow or live): reviewed, skipped, deferred,
 errors - fail loud.
+
+### 7. Clean up
+
+Remove the per-cluster clones once the digest is rendered:
+`Remove-Item -Recurse -Force C:\tmp\pr-review-loop\clones\*`. They are
+throwaway checkouts, not state - the marker on each PR is the only memory the
+loop keeps. Leave the shadow drafts under `C:\tmp\pr-review-loop\<date>\` in
+place; they're the run's review artefact. If a clone can't be removed (file
+lock), record it in the run summary rather than failing the run.
 
 ## Anti-patterns
 
