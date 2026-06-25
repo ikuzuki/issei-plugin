@@ -110,6 +110,18 @@ Each group gets exactly one verdict:
   doesn't make legible; named lines left for a human. A deliberate hand-off,
   not a failure to review.
 
+**Staged and stacked PRs are graded on their own diff, not on what's missing
+downstream.** A PR that depends on an unmerged sibling, or that ships a unit
+(an assembler, a model) deliberately wired by a follow-on PR, does NOT earn
+`Needs Changes` for the absent caller or the not-yet-merged dependency - those
+are sequencing facts, not defects in this diff. Flag them as a merge-order note
+and grade only what this PR actually changes: if the only blocking finding is
+"its dependency hasn't merged yet", the verdict is `Minor comments` with that
+note, not `Needs Changes`. Reserve `Needs Changes` for a real defect in the
+code under review (a bug, a security gap, a standards violation that bites
+today). A finding that only bites *after* a sibling merges belongs in the body
+as a pre-merge checklist item, not as the grade.
+
 Compose the top-level comment + inline comments per
 [`references/comment-voice.md`](references/comment-voice.md). The top-level body
 MUST end with the marker `<!-- pr-review-loop: reviewed-at=<head-oid> -->` - it
@@ -117,15 +129,29 @@ drives idempotency (step 1) and attribution (step 6). Inline comments target a
 `path:line` inside a diff hunk; lead with the verdict, group small stuff rather
 than carpeting the PR.
 
+**Sub-agent line numbers are not trustworthy - validate every anchor against
+the diff before posting.** Observed in practice: the review agents routinely
+cite line numbers that don't match the actual diff (off by hundreds of lines).
+The reviews API is **atomic** - one unresolvable anchor 422s the *entire*
+review, taking every other comment with it. So 422-recovery after the fact is
+the wrong shape. Before composing the `comments` array, fetch the patch
+(`gh pr diff <n> --patch`), parse the hunks, and map each finding to a real
+right-side (added/context) line by **matching on the code it refers to**, not
+on the number the agent guessed. Drop or relocate any anchor that doesn't
+resolve to a line in the diff, and fold a finding into the top-level body
+rather than dropping it. Post only once the whole `comments` array is known to
+resolve.
+
 ### 5. Post (live) or write (shadow)
 
 - **Shadow:** write each review to `C:\tmp\pr-review-loop\<date>\<repo>-<n>.md`.
 - **Live** (`PR_REVIEW_LOOP_LIVE=1`): post one review per PR via
   `gh api -X POST repos/<owner>/<repo>/pulls/<n>/reviews` with `event=COMMENT`,
   `commit_id` (head OID), `body` (top-level + marker), and `comments` (inline
-  array). On 422 "Line could not be resolved", move the comment to the nearest
-  in-hunk line and retry once; if it still fails, fold it into the top-level
-  body. Never silently lose a finding.
+  array, anchors validated per the rule above). A 422 should be rare once
+  anchors are pre-validated; if one still occurs, move the comment to the
+  nearest in-hunk line and retry once, else fold it into the top-level body.
+  Never silently lose a finding.
 
 ### 6. Render the digest
 
