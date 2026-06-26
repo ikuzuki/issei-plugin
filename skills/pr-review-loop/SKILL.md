@@ -142,6 +142,14 @@ resolve to a line in the diff, and fold a finding into the top-level body
 rather than dropping it. Post only once the whole `comments` array is known to
 resolve.
 
+**Never probe-post.** Resolve line numbers by parsing the diff text offline -
+never post a throwaway "test" review to the live PR to discover where a line
+lands. (This happened once in an early run and left junk reviews on a
+teammate's PR that could not be deleted.) When the orchestrator fans out the
+posting work to sub-agents, this rule and the offline-anchor rule above MUST be
+in each sub-agent's brief - they post to real PRs and there is no one watching
+to clean up after an unattended run.
+
 ### 5. Post (live) or write (shadow)
 
 - **Shadow:** write each review to `C:\tmp\pr-review-loop\<date>\<repo>-<n>.md`.
