@@ -38,12 +38,20 @@ REPOS = [
 TEAM = {
     "adele-curve": "Adele", "Issei-curve": "Issei", "seanc-curve": "Sean",
     "nik10-mah": "Nikhil", "Luke-curve": "Luke", "J-Curwell": "James",
+    "VISHAL87KUMAR": "Vishal",
 }
 
 RELEASE_BOTS = {"release-please[bot]", "github-actions[bot]"}
 
 # The marker every loop review leaves; drives idempotency + attribution.
 MARKER_RE = re.compile(r"<!--\s*pr-review-loop:\s*reviewed-at=([0-9a-fA-F]+)\s*-->")
+
+# The verdict the loop writes as the first bold line of its top-level comment.
+# Lets the digest recover the verdict (and @claude attribution) for a PR the
+# loop reviewed in a previous run but did not touch this run.
+LOOP_VERDICT_RE = re.compile(
+    r"\*\*(Looks good|Minor comments|Needs Changes|Needs Judgment)\*\*"
+)
 
 CONV_PREFIX_RE = re.compile(
     r"^(feat|fix|chore|docs|test|refactor|perf|build|ci|style|revert)(\([^)]+\))?!?:\s*",
@@ -151,6 +159,22 @@ def has_human_review(pr):
     return any(not MARKER_RE.search(r.get("body") or "") for r in non_self_reviews(pr))
 
 
+def loop_verdict(pr):
+    """Verdict from the latest loop-marker review, or None.
+
+    Recovers attribution + verdict for a PR the loop reviewed in a prior run
+    and left untouched this run (marker matches head, so it was skipped). The
+    marker is the loop's only memory, so the digest reads the verdict back off
+    the review body rather than a store."""
+    marked = [r for r in (pr.get("reviews") or [])
+              if MARKER_RE.search(r.get("body") or "")]
+    if not marked:
+        return None
+    marked.sort(key=lambda r: r.get("submittedAt", ""), reverse=True)
+    m = LOOP_VERDICT_RE.search(marked[0].get("body") or "")
+    return m.group(1) if m else None
+
+
 def approver(pr):
     """Login of the latest non-self APPROVED reviewer, or None."""
     apps = [r for r in non_self_reviews(pr) if r.get("state") == "APPROVED"]
@@ -204,10 +228,21 @@ def cmd_render(verdicts_path):
             elif verdict in ("Looks good", "Minor comments", "Needs Judgment"):
                 awaiting.append((repo, pr, v))
             else:
-                # No loop verdict this run - attribute to the human reviewer if any.
+                # No loop verdict this run. A human review wins (the loop is the
+                # first-pass reviewer and steps aside for a human); otherwise fall
+                # back to the verdict the loop recorded in a previous run via its
+                # marker, so previously-reviewed-unchanged PRs keep their @claude tag.
                 who, changed = human_reviewer(pr)
-                v = {"reviewer": f"@{who}" if who else None}
-                (followup if changed else awaiting).append((repo, pr, v))
+                if who:
+                    v = {"reviewer": f"@{who}"}
+                    (followup if changed else awaiting).append((repo, pr, v))
+                else:
+                    lv = loop_verdict(pr)
+                    if lv:
+                        v = {"reviewer": "@claude", "verdict": lv}
+                        (followup if lv == "Needs Changes" else awaiting).append((repo, pr, v))
+                    else:
+                        awaiting.append((repo, pr, {"reviewer": None}))
 
     print(render(shipped, approved, awaiting, followup, since))
 
@@ -250,8 +285,11 @@ def render(shipped, approved, awaiting, followup, since):
         L.append("")
     if awaiting:
         L.append(f"👀 **Awaiting human review** ({len(awaiting)})")
-        # business-logic (Needs Judgment) pinned to the top with a ⚠️ flag
-        ordered = sorted(awaiting, key=lambda t: t[2].get("verdict") != "Needs Judgment")
+        # Order by how close to mergeable: business-logic hand-offs first (pinned
+        # with a ⚠️ flag), then ready-to-approve, then nits, then untagged.
+        # sorted() is stable, so repo order is kept within each rank.
+        rank = {"Needs Judgment": 0, "Looks good": 1, "Minor comments": 2}
+        ordered = sorted(awaiting, key=lambda t: rank.get(t[2].get("verdict"), 3))
         for r, pr, v in ordered:
             line = _line(r, pr, v)
             if v.get("verdict") == "Needs Judgment":

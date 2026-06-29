@@ -70,6 +70,18 @@ review must be grounded in `intech-tools:coding-standards` via that skill's
 citation gate. A generic diff pass that skips the standards does not conform to
 Curve review and is not acceptable - using the real skill is the whole point.
 
+**Verify the skills actually fired - don't take the brief on trust.** Telling a
+sub-agent to run `code-review` is not proof it did; a sub-agent can silently
+fall back to a generic pass (or lack access to the plugin skills entirely), and
+its transcript is purged after it returns, so there is no after-the-fact way to
+check. So make each cluster sub-agent **report, in its returned output, the
+exact skills and specialist agents it invoked** (e.g. `intech-tools:code-review`
+plus the `silent-failure-hunter` / `type-design-analyzer` / ... it spawned). If
+a cluster's report does not show `intech-tools:code-review` firing, treat that
+cluster as **unverified**: do not report it as reviewed, flag it loudly in the
+run summary (step 6), and re-run it before posting. This check is mandatory -
+"instructed but unverified" is a silent skip wearing a verdict.
+
 **Model tiering (two tiers):** the loop's own orchestrator stays on **Opus**
 (clustering, business-logic judgment, synthesis); everything below it - each
 per-cluster `code-review` orchestrator and the specialist agents it spawns -
@@ -176,7 +188,10 @@ and the verdict tag.** The PR title is the only link; there's no separate
 `cdt-daily-pr-digest`.
 
 Always print a run summary too (shadow or live): reviewed, skipped, deferred,
-errors - fail loud.
+errors - fail loud. Include a **skills-invoked** line per the verification rule
+in step 3: confirm `intech-tools:code-review` fired for every cluster reviewed,
+and list any cluster whose sub-agent did not report it as **unverified** rather
+than counting it among the reviewed.
 
 ### 7. Clean up
 
