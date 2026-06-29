@@ -105,6 +105,23 @@ The review cross-references existing comments and does not re-raise a point
 already made or contradict a human reviewer without new reasoning. For stacked
 PRs, review only the incremental diff.
 
+**Ingest replies to the loop's own prior comments - do not re-raise a point the
+author has already answered.** On any PR the loop has reviewed before, the
+author will have replied to the loop's earlier comments. Before composing, fetch
+those threads in full - including the author's replies to the loop's own review
+comments (`gh api repos/<owner>/<repo>/pulls/<n>/comments`, which returns the
+threaded conversation, not just the top-level review) - and feed them to the
+review sub-agents as required context. A point the author has rebutted with a
+concrete reason is **settled**: drop it. Re-raise only if there is genuinely new
+evidence the rebuttal is wrong, and if so, engage with the rebuttal explicitly
+rather than restating the original comment. Re-stating a settled point as though
+it were fresh is the most common failure of an unattended re-review and erodes
+the author's trust in the loop. This is especially sharp when a finding came
+from `coding-standards` and the author has explained that the cited
+module/API/pattern does not exist in the *pinned* dependency (the reference
+catalogue runs ahead of what is shipped): the author's ground truth wins - do
+not re-raise.
+
 No per-run PR cap - review every actionable PR. The daily cadence keeps the
 changed set small and unchanged PRs are skipped via the marker, so there's no
 standing backlog to cap against. Bound only the fan-out concurrency (batch
