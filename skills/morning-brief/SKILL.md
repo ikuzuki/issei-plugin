@@ -78,12 +78,18 @@ notes and PR buckets: a ticket with a mid-flight note or an open PR is where the
 day's momentum already is. `READY FOR QA` items are handed off - mention only if
 one is relevant, don't list the pile.
 
-## 3. Calendar (optional)
+## 3. Calendar (paste-in until the presence layer lands)
 
-There is no local calendar feed today. If Issei pastes his agenda, fold the
-meetings into the plan (they bound the deep block). Otherwise add one line -
-"calendar not wired; paste today's meetings to fold them in" - and move on. Don't
-fabricate a schedule.
+No automated calendar feed yet, by necessity not oversight: on Issei's machine the
+clean paths are all blocked - new Outlook has no COM, and the tenant disables
+user-consent so delegated Graph (`Calendars.Read`) needs IT (tested 2026-06-30, see
+project-autopilot `presence-layer.md`). The only self-serve route is CDP automation
+of his already-authenticated browser against OWA, which is the Phase-3 presence
+layer; calendar folds into that when it's built.
+
+Until then: if Issei pastes his agenda, fold the meetings into the plan (they bound
+the deep block). Otherwise add one line - "calendar not wired; paste today's
+meetings to fold them in" - and move on. Don't fabricate a schedule.
 
 ## 4. Synthesise the brief
 
