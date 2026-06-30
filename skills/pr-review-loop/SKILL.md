@@ -70,6 +70,19 @@ review must be grounded in `intech-tools:coding-standards` via that skill's
 citation gate. A generic diff pass that skips the standards does not conform to
 Curve review and is not acceptable - using the real skill is the whole point.
 
+**Gate the specialist set by what the diff touches.** `code-review` already
+scopes several specialists to diff content - `comment-analyzer` only when
+comments or docstrings change, `type-design-analyzer` only when types change,
+`pr-test-analyzer` only when application or test code changes,
+`breaking-change-detector` only on public-surface change, `jira-scope-checker`
+only on a ticket-prefixed branch. Let that gating do its work: the cluster brief
+asks for the specialists the diff warrants, not the full panel on every PR. The
+core bug-finders (`code-reviewer`, `silent-failure-hunter`,
+`git-history-reviewer`) run on every cluster; the rest fire only when their
+trigger is present in the diff. This trims agent count without lowering the bar
+- it skips specialists that would have nothing to look at, not specialists that
+might find a defect.
+
 **Verify the skills actually fired - don't take the brief on trust.** Telling a
 sub-agent to run `code-review` is not proof it did; a sub-agent can silently
 fall back to a generic pass (or lack access to the plugin skills entirely), and
@@ -80,7 +93,9 @@ plus the `silent-failure-hunter` / `type-design-analyzer` / ... it spawned). If
 a cluster's report does not show `intech-tools:code-review` firing, treat that
 cluster as **unverified**: do not report it as reviewed, flag it loudly in the
 run summary (step 6), and re-run it before posting. This check is mandatory -
-"instructed but unverified" is a silent skip wearing a verdict.
+"instructed but unverified" is a silent skip wearing a verdict. The check is on
+`code-review` itself, not the full panel: a specialist legitimately gated out by
+the diff (no type change, so no `type-design-analyzer`) is expected, not a gap.
 
 **Model tiering (two tiers):** the loop's own orchestrator stays on **Opus**
 (clustering, business-logic judgment, synthesis); everything below it - each
@@ -90,6 +105,24 @@ cost, but observed Sonnet cost per run is low enough that the saving doesn't
 justify the complexity, nor the risk of a weaker tier missing real defects (a
 reviewer is the wrong place to economise on bug detection). Keep specialists on
 Sonnet unless run cost becomes a real constraint.
+
+**Cost discipline - the orchestrator must not ingest the fan-out.** The
+dominant cost is not the model tier, it is the Opus orchestrator's context. Each
+cluster runs `code-review`, which itself fans out ~6-8 Sonnet specialists, so N
+actionable PRs is roughly 8N Sonnet agents plus the orchestrator. That fan-out
+is fine on Sonnet; what is not fine is letting the individual specialist outputs
+surface back to Opus. Launch each cluster as a single unit that runs
+`code-review` to completion and returns **one consolidated report** - the
+specialist consolidation happens inside the cluster agent, not in the
+orchestrator. Await the cluster agents; do not poll, nudge, or resume them
+between launch and consolidation, and if the harness routes individual
+specialist or grandchild completions up to the orchestrator, do not act on them
+and do not wait on them. An observed run spent ~39% of a 5-hour budget largely
+because ~20 raw specialist reports (30-140k tokens each) landed in the
+orchestrator's context and were read there; the consolidated per-cluster reports
+are all the orchestrator needs. Prefer launching the cluster agents so their
+fan-out stays contained (synchronous within the cluster agent) over a deep
+background-async tree whose leaf completions notify the top.
 
 **Isolated clone per cluster - required, not deferred.** `code-review` runs
 `gh pr checkout` and reads the working tree, so two clusters reviewing in
@@ -163,13 +196,17 @@ the diff before posting.** Observed in practice: the review agents routinely
 cite line numbers that don't match the actual diff (off by hundreds of lines).
 The reviews API is **atomic** - one unresolvable anchor 422s the *entire*
 review, taking every other comment with it. So 422-recovery after the fact is
-the wrong shape. Before composing the `comments` array, fetch the patch
-(`gh pr diff <n> --patch`), parse the hunks, and map each finding to a real
-right-side (added/context) line by **matching on the code it refers to**, not
-on the number the agent guessed. Drop or relocate any anchor that doesn't
-resolve to a line in the diff, and fold a finding into the top-level body
-rather than dropping it. Post only once the whole `comments` array is known to
-resolve.
+the wrong shape. Before composing the `comments` array, fetch the **combined**
+diff (`gh pr diff <n>` - NOT `--patch`: that emits per-commit format-patch which
+repeats each changed file once per commit and resets hunk line numbers, so the
+numbers you compute will not match GitHub's `base...head` diff and the review
+422s. `gh pr diff <n>` with no flag gives the single combined diff GitHub
+actually uses). Parse the hunks, and map each finding to a real right-side
+(added/context) line by **matching on the code it refers to**, not on the number
+the agent guessed. A context line inside a hunk is a valid anchor; a line absent
+from every hunk is not - drop or relocate it and fold the finding into the
+top-level body rather than dropping it. Post only once the whole `comments`
+array is known to resolve.
 
 **Never probe-post.** Resolve line numbers by parsing the diff text offline -
 never post a throwaway "test" review to the live PR to discover where a line
@@ -224,6 +261,14 @@ lock), record it in the run summary rather than failing the run.
 - Posting without the `reviewed-at` marker - breaks idempotency and attribution.
 - Re-reviewing a PR whose head OID matches the marker.
 - Running the review on Opus instead of Sonnet sub-agents.
+- Letting individual specialist / grandchild outputs surface into the Opus
+  orchestrator's context - the fan-out consolidates inside each cluster agent;
+  the orchestrator reads only the one per-cluster report. This was the dominant
+  cost in an observed run.
+- Polling, nudging, or resuming cluster agents instead of awaiting a single
+  consolidated report per cluster.
+- Validating anchors against `gh pr diff <n> --patch` - the per-commit format
+  repeats files and gives wrong line numbers; use the combined `gh pr diff <n>`.
 - APPROVE / REQUEST_CHANGES / merge. Never.
 - Guessing on business logic instead of `Needs Judgment`.
 - Putting review content (findings, headlines, nit detail) in the digest - it's
