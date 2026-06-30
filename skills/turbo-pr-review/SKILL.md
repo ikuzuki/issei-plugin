@@ -1,6 +1,6 @@
 ---
 name: turbo-pr-review
-description: Walk through a GitHub PR in plain English, surface potential issues with jargon unpacked, draft inline review comments in Issei's voice, then post only on explicit confirmation. Use this skill when the user pastes a PR URL or PR number and says "review this PR", "have a crack at this PR", "have a crack at this" (when PR context is established), "walk me through this PR", "explain what this PR is doing", "explain this PR in plain English", "in laymen's terms", "what does this PR do", "thoughts on this PR", "take a look at this PR", "what do you make of #N", "draft review comments for this PR", "draft inline comments for this PR", "help me review this", or hands over multiple PR URLs/numbers in one message. Also fires on "review these together", "look at these in conjunction", or when the user is reviewing PRs from the cdt-daily-pr-digest. Handles multi-PR scenarios by grouping related PRs (shared Jira ticket, explicit cross-PR dependency, shared API contract) and splitting unrelated ones. A lightweight alternative to the heavy `intech-tools:code-review` skill — no specialist sub-agents, no citation gate, no SemVer audits, no auto-posting. Do NOT use for deep multi-agent audits (use `intech-tools:code-review` for those), drafting PR descriptions (use `issei-voice`), drafting comments on Confluence docs or Jira tickets (use `issei-voice`), or reviewing code that hasn't been raised as a PR yet. Composes with `issei-voice` and the voice rules at `knowledge-vault/voice/code-review.md`.
+description: Walk through a GitHub PR in plain English, surface potential issues with jargon unpacked, draft inline review comments in Issei's voice, then post only on explicit confirmation. Use this skill when the user pastes a PR URL or PR number and says "review this PR", "have a crack at this PR", "have a crack at this" (when PR context is established), "walk me through this PR", "explain what this PR is doing", "explain this PR in plain English", "in laymen's terms", "what does this PR do", "thoughts on this PR", "take a look at this PR", "what do you make of #N", "draft review comments for this PR", "draft inline comments for this PR", "help me review this", or hands over multiple PR URLs/numbers in one message. Also fires on "review these together", "look at these in conjunction", or when the user is reviewing PRs from the cdt-daily-pr-digest. Handles multi-PR scenarios by grouping related PRs (shared Jira ticket, explicit cross-PR dependency, shared API contract) and splitting unrelated ones. A lightweight alternative to the heavy `intech-tools:code-review` skill — no specialist sub-agents, no citation gate, no SemVer audits, no auto-posting. Do NOT use for deep multi-agent audits (use `intech-tools:code-review` for those), drafting PR descriptions (use `issei-voice`), drafting comments on Confluence docs or Jira tickets (use `issei-voice`), or reviewing code that hasn't been raised as a PR yet. Composes with `issei-voice` and the voice rules at `knowledge-vault/voice/code-review.md`. Also runs RE-REVIEW mode when an author pushes changes after your earlier review, replies to your comments, or you are answering comments on your own PR - on phrases like "re-review", "they pushed back", "they replied take another look", "draft replies to these comments", "re-review and post", or "post with approval". Re-review mode reviews only the delta since your last pass and drafts replies into existing comment threads (reviewer mode for others' PRs, author mode for your own). Approval is always a separate explicit step; it never auto-approves or merges.
 ---
 
 # Turbo PR Review
@@ -38,6 +38,8 @@ For Curve work use `gh auth switch --user Issei-curve` before any read; for pers
 For each PR, pull title, body, additions/deletions, files, head OID, author, existing reviews, and inline-comment threads. Cache the head OID — you'll need it for posting. Don't paginate the diff yet; the per-file additions/deletions list is enough to decide which files matter.
 
 If multiple PRs are in scope, fetch all in parallel (single `gh` call per PR, batched in one tool message).
+
+If the PR already carries a review or inline comments authored by you, or its head OID has moved since your last review, this is a re-review and not a fresh first pass - go to **Re-review mode** below instead of running steps 2-7 from scratch.
 
 ### 2. Group or split decision
 
@@ -107,6 +109,34 @@ When the user gives the go:
 
 For multi-PR groups, post one review per PR but mention the group in the top-level body so reviewers see the cross-PR context.
 
+## Re-review mode
+
+The process above assumes a fresh PR. Often it isn't: the author has pushed changes since your last review, replied to your comments, or it's your own PR with reviewer comments waiting. Re-review mode reviews only the *delta* since your last pass and drafts replies *into* existing threads, rather than re-reviewing the whole PR again. The same draft-in-chat-then-confirm gate applies, so nothing posts until you give the go.
+
+### Delta detect
+
+- Find your last review's `commit_id`: `gh api repos/<owner>/<repo>/pulls/<n>/reviews` and take the most recent review where `user.login` is your account. That `commit_id` is the head you last saw.
+- The delta is everything between that OID and the current head OID. If the branch is checked out, `git diff <last_commit_id>..<head_oid>`; otherwise diff the current `gh pr diff` against what you reviewed. Review only the new lines plus enough context to judge them - don't re-read the whole PR.
+- Pull threaded replies to your comments: `gh api repos/<owner>/<repo>/pulls/<n>/comments` returns every inline comment with its `id`, `user.login`, `in_reply_to_id`, and `body`. Find threads you started (or commented on) that now have a newer reply from someone else - those are the pushbacks and questions to answer.
+
+### Reviewer mode (someone else's PR)
+
+For each open thread on your comments: if the author fixed it, acknowledge briefly ("Ah true yeah good point") or resolve silently; if they pushed back, only re-engage with genuinely new reasoning (repeating the same argument adds nothing); if a fix is claimed but you can't see it in the delta, ask "has this landed? not seeing it in the latest push". For new issues in the delta, draft fresh inline comments as in step 5. Frame everything as picking up a conversation, not opening one.
+
+### Author mode (your own PR)
+
+When reviewers have left comments on your PR, draft one reply per thread: acknowledge and confirm the fix ("done, pushed in `<short-sha>`"), push back with reasoning where you disagree (concise, no apology), or ask a clarifying question. Flag to the user which threads need a *code change* versus just a reply, so they know what's left before the PR can land. These post as the PR author - your own account.
+
+### Curate and post (gated)
+
+Surface all drafts grouped (thread replies first, then any new findings), exactly as step 6 - you exclude, reorder, or edit ("just the first 2") before anything goes out. The draft-then-confirm gate is the safety; nothing posts until you give the go. On the first real use, treat it as the test: draft, eyeball the delta and the threads, and only confirm-post once they look right.
+
+Posting recipes:
+
+- **Reply into an existing thread:** `gh api -X POST repos/<owner>/<repo>/pulls/<n>/comments/<comment_id>/replies -f body='...'`, where `<comment_id>` is the `id` of the comment you're replying to. This lands in the existing thread, distinct from a new top-level inline comment.
+- **New inline / top-level comments:** as step 7 (`event=COMMENT` review).
+- **Approval is a separate, explicit action.** Only when the user says "post with approval" (or similar) do you run `gh api -X POST repos/<owner>/<repo>/pulls/<n>/reviews -f event=APPROVE -f body='...'`. Never bundle APPROVE with comments unless told to, and never merge. "Post comments" and "post with approval" are different commands - keep them distinct.
+
 ## Voice shape — the bits that recur
 
 The patterns below mostly come from `knowledge-vault/voice/code-review.md`. A few (em-dash ban, British English) are inherited from the broader `issei-voice` skill rather than the PR-review voice doc specifically — flagged inline where that's the case so attribution stays honest.
@@ -144,6 +174,8 @@ The voice doc covers single-PR comments. Multi-PR handling is novel territory th
 - **`side: "RIGHT"` for additions, `"LEFT"` for deletions.** Default to RIGHT for almost everything — you're commenting on the new code, not the removed code.
 - **`event=COMMENT` by default.** APPROVE/REQUEST_CHANGES need explicit user consent.
 - **No auto-retry on 422.** Re-surface the failing comment to the user with the resolved hunk lines and ask which line to land it on. Silent retries can land comments on the wrong line.
+- **Thread replies use a different endpoint.** Replying *into* an existing comment thread is `gh api -X POST .../pulls/<n>/comments/<comment_id>/replies`, not the reviews endpoint. Get `<comment_id>` from `gh api .../pulls/<n>/comments`.
+- **APPROVE is gated and separate.** `event=APPROVE` only on an explicit "post with approval"; never bundle it with comments unless told, never merge. "Post comments" and "post with approval" are distinct commands.
 
 ## Self-check before delivering
 
@@ -154,6 +186,7 @@ The voice doc covers single-PR comments. Multi-PR handling is novel territory th
 - [ ] For each inline comment, is the target line inside a diff hunk?
 - [ ] For multi-PR groups, is there a single cross-PR explainer plus per-PR sections?
 - [ ] On post, `event=COMMENT` unless user explicitly asked otherwise?
+- [ ] If re-review: did I review only the delta since my last review, answer open threads, and keep APPROVE as a separate explicit step?
 
 ## Scope
 
