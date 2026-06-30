@@ -72,7 +72,7 @@ def gh_json(args):
 def load_open(repo):
     return gh_json([
         "gh", "pr", "list", "--repo", f"{ORG}/{repo}", "--state", "open",
-        "--json", "number,title,author,updatedAt,isDraft,url,headRefOid,"
+        "--json", "number,title,author,createdAt,updatedAt,isDraft,url,headRefOid,"
         "reviewDecision,reviews,reviewRequests", "--limit", "100",
     ])
 
@@ -247,9 +247,33 @@ def cmd_render(verdicts_path):
     print(render(shipped, approved, awaiting, followup, since))
 
 
-def _line(repo, pr, v=None, show_verdict=True):
+# Age dot for open PRs: a coloured nudge to merge or close stale work. Teams
+# doesn't render colour from pasted markdown, so the dot emoji is the colour.
+# Thresholds are deliberately tight for a daily cadence - a PR open a week is stale.
+AGE_GREEN_LT = 3   # < 3 days open
+AGE_AMBER_LT = 7   # 3-6 days open; >= 7 is red
+
+
+def age_marker(pr):
+    """(dot, days_open) for an open PR, or ("", None) if createdAt is missing."""
+    created = pr.get("createdAt")
+    if not created:
+        return "", None
+    days = (NOW - datetime.fromisoformat(created.replace("Z", "+00:00"))).days
+    dot = "🟢" if days < AGE_GREEN_LT else "🟡" if days < AGE_AMBER_LT else "🔴"
+    return dot, days
+
+
+def _age_prefix(pr):
+    dot, days = age_marker(pr)
+    return f"{dot} {days}d " if dot else ""
+
+
+def _line(repo, pr, v=None, show_verdict=True, show_age=False, flag=""):
     author = (pr.get("author") or {}).get("login", "?")
-    base = f"- {short_title(pr['title'])} ([{repo}#{pr['number']}]({pr['url']}), @{author})"
+    prefix = _age_prefix(pr) if show_age else ""
+    base = (f"- {prefix}{flag}{short_title(pr['title'])} "
+            f"([{repo}#{pr['number']}]({pr['url']}), @{author})")
     if not v:
         return base
     bits = []
@@ -271,7 +295,11 @@ def render(shipped, approved, awaiting, followup, since):
         counts.append(f"{len(followup)} with the author")
     if approved:
         counts.append(f"{len(approved)} ready to merge")
-    L += [f"`{' · '.join(counts)}`", ""]
+    L.append(f"`{' · '.join(counts)}`")
+    # Legend for the open-PR age dots (only meaningful when there are open PRs).
+    if approved or awaiting or followup:
+        L.append("_open for: 🟢 <3d · 🟡 3–6d · 🔴 7d+_")
+    L.append("")
 
     if shipped:
         L.append(f"🎉 **Shipped since {since.strftime('%A')}** ({len(shipped)})")
@@ -280,7 +308,8 @@ def render(shipped, approved, awaiting, followup, since):
         L.append(f"✅ **Approved — ready to merge** ({len(approved)})")
         for r, pr, v in approved:
             author = (pr.get("author") or {}).get("login", "?")
-            L.append(f"- {short_title(pr['title'])} ([{r}#{pr['number']}]({pr['url']}), "
+            L.append(f"- {_age_prefix(pr)}{short_title(pr['title'])} "
+                     f"([{r}#{pr['number']}]({pr['url']}), "
                      f"@{author}) — approved: {v.get('reviewer') or '?'}")
         L.append("")
     if awaiting:
@@ -291,14 +320,12 @@ def render(shipped, approved, awaiting, followup, since):
         rank = {"Needs Judgment": 0, "Looks good": 1, "Minor comments": 2}
         ordered = sorted(awaiting, key=lambda t: rank.get(t[2].get("verdict"), 3))
         for r, pr, v in ordered:
-            line = _line(r, pr, v)
-            if v.get("verdict") == "Needs Judgment":
-                line = "- ⚠️ " + line[2:]
-            L.append(line)
+            flag = "⚠️ " if v.get("verdict") == "Needs Judgment" else ""
+            L.append(_line(r, pr, v, show_age=True, flag=flag))
         L.append("")
     if followup:
         L.append(f"🟠 **Needs follow-up — waiting on the author** ({len(followup)})")
-        L += [_line(r, pr, v) for r, pr, v in followup] + [""]
+        L += [_line(r, pr, v, show_age=True) for r, pr, v in followup] + [""]
 
     return "\n".join(L).rstrip()
 

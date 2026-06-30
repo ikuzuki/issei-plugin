@@ -237,9 +237,11 @@ actor; untouched-but-previously-reviewed → `@claude` if the latest review
 carries the marker, else the human who left it), classifies into the four
 sections, and prints the digest. **The digest is a status summary, not a review
 - no findings or headlines, just the PR title (linked), author, `reviewed: @x`,
-and the verdict tag.** The PR title is the only link; there's no separate
-`[review]` link (the PR reference already points there). This output supersedes
-`cdt-daily-pr-digest`.
+and the verdict tag.** Each open PR also carries an age dot (🟢 <3d · 🟡 3-6d ·
+🔴 7d+ since opened) so stale PRs that need merging or closing are scannable;
+the thresholds live in `build.py` (`AGE_GREEN_LT` / `AGE_AMBER_LT`). The PR
+title is the only link; there's no separate `[review]` link (the PR reference
+already points there). This output supersedes `cdt-daily-pr-digest`.
 
 Always print a run summary too (shadow or live): reviewed, skipped, deferred,
 errors - fail loud. Include a **skills-invoked** line per the verification rule
