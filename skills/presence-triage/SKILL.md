@@ -36,10 +36,11 @@ Run from `C:\Users\IsseiKuzuki\Claude\project-autopilot\scripts\`.
    one", "why does this need me?" - redraft via `issei-voice` (+ `voice/*` refs),
    re-read the thread with `teams_thread.py` if more context is needed.
 5. **Gated send (Issei always sends).** On an explicit "send that" / "reply to X":
-   open the thread in the automation Edge so it's in front of him and present the
-   final text to paste and send. Auto-typing the compose box (pre-fill, stop on the
-   cursor) is the planned upgrade; until it's built and tested, hand off the text +
-   the open thread. Never press send, never pick a recipient he hasn't seen.
+   `python teams_send.py "<chat>" "<approved text>"` - it opens the thread and
+   pre-fills the compose box, then **stops on the cursor**. Issei reads it in Teams
+   and presses Enter. `teams_send.py` contains no Enter keypress and no send-button
+   click by design - sending is always the human act. Confirm the exact chat + final
+   wording with Issei before calling it; never pre-fill a recipient he hasn't seen.
 
 ## Capture (feeds the memory tiers)
 
