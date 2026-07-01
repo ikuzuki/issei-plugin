@@ -22,6 +22,12 @@ Run from `C:\Users\IsseiKuzuki\Claude\project-autopilot\scripts\`.
 1. **Get the current picture.** `python presence_poll.py --markdown` - a fresh poll,
    classified, new-since-last-check only. (Or read `captures/presence_triage.json` if
    you just want the last poll without re-hitting the browser.)
+   For the **mail** side, `python mail_triage.py` sweeps the inbox + notification
+   folders (GitHub / Atlassian-Jira / AWS / Intech Notifications) list-level (no
+   mark-read) and a `claude -p` surfaces only the important few - real-person asks,
+   PR-review-requests, Jira @mentions, incidents - dropping newsletters, Teams-
+   notification emails, and bot/CI noise. This is the heavier deep view (folder sweep
+   + classify), so it's the on-demand cockpit's job, not the 20-min poll's.
 2. **Deepen the needs-reply items.** For each Teams item that needs a reply,
    `python presence_draft.py --chat "<name>"` - it reads the actual thread and
    re-assesses (skips social/resolved), then drafts in Issei's voice. Trust the
@@ -60,7 +66,9 @@ freely, but the only write is a reply Issei has explicitly approved and sends hi
 
 ## Composition
 
-`presence_poll.py` (poll + classify), `presence_draft.py` + `teams_thread.py`
-(thread context + draft), `issei-voice` (+ `knowledge-vault/voice/*`) for wording,
-`cal_read.py` if a reply needs Issei's availability, `distil-vault` for capture.
-Runs on the same CDP substrate as the rest of the presence layer.
+`presence_poll.py` (Teams + inbox poll + classify), `mail_triage.py` (multi-folder
+mail importance sweep) + `mail_folder.py` / `mail_body.py` (folder list / deep body
+read), `presence_draft.py` + `teams_thread.py` (thread context + draft),
+`issei-voice` (+ `knowledge-vault/voice/*`) for wording, `cal_read.py` if a reply
+needs Issei's availability, `distil-vault` for capture. Runs on the same CDP
+substrate as the rest of the presence layer.
