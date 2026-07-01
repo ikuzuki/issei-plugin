@@ -97,9 +97,21 @@ default set for cost reasons:
   with prior loop/human history. On a first-pass PR (`reviewed_before: false`)
   there is nothing to regress against, so it is the worst cost-to-value finder in
   the set. Gate it to re-reviews.
+- **On a small re-review, run the core finders only.** When a PR is a re-review
+  (`reviewed_before: true`) with a small incremental diff (roughly under 150
+  changed lines), the diff-gated specialists (`type-design-analyzer`,
+  `pr-test-analyzer`, `comment-analyzer`) are mostly re-confirming fixes the
+  author already made against points the loop or a human raised - the steady
+  state for a daily loop. Skip them; run only the core finders (`code-reviewer`,
+  `silent-failure-hunter`, plus `git-history-reviewer` per the rule above).
+  Escalate to the full diff-gated panel only for a first-pass PR
+  (`reviewed_before: false`) or a large re-review diff, where genuinely new
+  surface warrants the specialists.
 
 The remaining core finders (`code-reviewer`, `silent-failure-hunter`) run on
-every cluster; the diff-gated specialists fire only when their trigger is present.
+every cluster; the diff-gated specialists fire only when their trigger is present
+and the PR is a first-pass or large re-review (small re-reviews get core finders
+only, per the bullet above).
 This trims agent count and the heaviest finders without lowering the bug bar on
 new code - it skips work that is either suppressed (breaking-change) or has
 nothing to look at (git-history on first-pass).
