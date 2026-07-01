@@ -69,24 +69,21 @@ Also: **annual leave must be logged in both Scoro and Outlook.**
 
 ## Step 4 - Fill cells (after confirmation)
 
-Drive the dedicated Edge over CDP, cell by cell. For each task row x day-with-hours
-(using the live task labels from `scoro_read.py`, omitting 0h days): locate the row
-by its label, click that day's `0h` cell - an editor textbox opens - type the `h:mm`
-value, and Tab to commit (Tab advances to the next day in the same row).
+`python scoro_fill.py plan.json` - the plan is `{"<task label substr>": {"Mon":"5:30",
+"Tue":"5:00", ...}, ...}` using the live task labels from `scoro_read.py`, omitting
+0h days. Preview first with `--dry` (reports which cells it would fill vs skip).
+Mechanism (proven live): click the empty day cell -> an hours INPUT focuses ->
+select-all + type `h:mm` -> Tab commits.
 
-**No blind batch script yet.** `scoro_fill.py` is deliberately NOT built: it writes
-to the real timesheet and the row x day cell-targeting hasn't been proven live, so a
-blind fill would risk logging wrong hours. So the **first fill is supervised** -
-drive one day interactively, run `scoro_read.py` to confirm it landed in the right
-cells, and only then continue the week. Once the targeting is proven in a real
-session, capture it into a `scoro_fill.py` helper that takes the confirmed plan JSON.
-
-Caveats (still true on the CDP path):
-- **Skip 0h cells** - only fill days with hours; never write `0:00`.
-- **Footer overlay** can intercept clicks on lower rows (Personal Development,
-  Attending Training) - scroll the grid down (`window.scrollBy(0, 300)`) first.
-- CDP locators re-resolve, so the old MCP "refs change every snapshot" dance is gone,
-  but **verify after filling** (Step 5) - don't assume.
+- **Only fills EMPTY cells.** A cell that already has a value opens a NOTE textarea on
+  click (a Scoro quirk), not the hours editor, so `scoro_fill` SKIPS filled cells
+  rather than risk writing into the wrong field. Clearing/editing a filled cell isn't
+  automated - do that in the Scoro UI.
+- **Footer overlay** can intercept clicks on lower rows - `scoro_fill` scrolls each
+  cell into view first.
+- **Verify after** (Step 5): `scoro_read` reflects changes only after a reload
+  (`scoro_fill` reloads at the end); filled values display as `30m` / `5h 30m`.
+- Never submits.
 
 ## Step 5 - Verify and offer to submit
 
