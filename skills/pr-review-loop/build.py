@@ -232,10 +232,16 @@ def cmd_render(verdicts_path):
                 # first-pass reviewer and steps aside for a human); otherwise fall
                 # back to the verdict the loop recorded in a previous run via its
                 # marker, so previously-reviewed-unchanged PRs keep their @claude tag.
-                who, changed = human_reviewer(pr)
+                who, _ = human_reviewer(pr)
                 if who:
+                    # Any human review hands the ball to the author, not just a
+                    # formal CHANGES_REQUESTED. The team reviews with COMMENTED,
+                    # so a review with comments is still feedback the author owns
+                    # a response to. The loop is the first-pass reviewer; once a
+                    # human has engaged, the PR is out of "awaiting review" and
+                    # into the author's court.
                     v = {"reviewer": f"@{who}"}
-                    (followup if changed else awaiting).append((repo, pr, v))
+                    followup.append((repo, pr, v))
                 else:
                     lv = loop_verdict(pr)
                     if lv:
