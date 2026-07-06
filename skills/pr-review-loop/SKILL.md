@@ -51,12 +51,17 @@ digest. Lets the verifier be validated on real PRs before posting. Default OFF.
 ### 1. Find what to review
 
 `python build.py --actionable` returns JSON of the PRs needing review this run -
-new PRs, or PRs with new commits since the loop's last `reviewed-at` marker.
-Two classes are skipped here: PRs unchanged since the loop's last review (the
-marker is the memory; no external store), and PRs a human has already reviewed.
-The loop is the **first-pass reviewer** - it never reviews over a human. A
-human-reviewed PR keeps its human attribution in the digest (`reviewed: @<human>`
-or `approved: @<human>`), and the loop leaves it alone.
+new PRs, or PRs with commits past the most recent review anyone (loop or human)
+left on them. The gate is keyed on the commit a review was actually submitted
+against, not on who left it: a PR is skipped only if its current head already
+has a review sitting on it. A **current** human review (submitted against the
+present head) keeps its human attribution in the digest (`reviewed: @<human>` or
+`approved: @<human>`) and the loop leaves it alone - but once the author pushes
+past that review, the PR is back in the queue like any other. The loop does not
+treat one human touch as a permanent hand-off; it only steps aside for as long as
+no new work has landed since. (One wrinkle worth knowing: some authors leave
+inline self-comments on their own PRs when pushing - those don't count as a
+review having happened, so they can't be used to dodge a re-review.)
 
 ### 2. Cluster
 
@@ -295,10 +300,13 @@ Write a verdicts map - `{"<repo>#<n>": {"verdict": "...", "reviewer": "@claude",
 the reviewer-attribution rule (this run → `@claude`; approved/merged → the human
 actor; untouched-but-previously-reviewed → `@claude` if the latest review
 carries the marker, else the human who left it), classifies into the four
-sections, and prints the digest. Bucketing rule: **any human review hands the
-PR to the author** - a PR a human has reviewed (even a `COMMENTED` review, not
-just a formal `CHANGES_REQUESTED`) lands in "Needs follow-up - waiting on the
-author", since the team reviews with comments rather than the formal states.
+sections, and prints the digest. Bucketing rule: **a current human review hands
+the PR to the author** - a PR a human has reviewed *at its present head* (even a
+`COMMENTED` review, not just a formal `CHANGES_REQUESTED`) lands in "Needs
+follow-up - waiting on the author", since the team reviews with comments rather
+than the formal states. Once the author pushes past that review, it stops
+counting for this bucketing (mirrors the actionable gate in step 1) - a PR
+doesn't sit "with the author" forever on the strength of one old comment.
 "Awaiting human review" therefore holds only loop-reviewed (`@claude`) and
 genuinely untouched PRs; approved PRs go to their own section. **The digest is a status summary, not a review
 - no findings or headlines, just the PR title (linked), author, `reviewed: @x`,

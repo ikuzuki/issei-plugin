@@ -127,12 +127,49 @@ def loop_marker_sha(pr):
     return sha
 
 
+def latest_review(pr):
+    """Most recent review that represents actual review coverage - the loop's own
+    marker review (whichever account posted it), or a genuine review from someone
+    other than the PR's author - or None.
+
+    Two things this deliberately gets right at once:
+
+    1. It does NOT blanket-exclude "self" reviews the way non_self_reviews() does:
+       the loop posts under whichever team member's `gh` account is authenticated
+       (Issei-curve), so for a PR that person themself authors, excluding all
+       self-login reviews would hide the loop's own marker review and make
+       needs_review() think the PR was never reviewed.
+    2. It DOES exclude the author's own non-marker self-comments (some authors -
+       Adele in particular - leave inline "note to self" review comments on their
+       own PRs when pushing). Those aren't a review having happened, and without
+       this exclusion they're indistinguishable from the loop's marker review
+       whenever the loop's account and the PR author are the same person - which
+       would make needs_review() falsely report "already covered" on a PR no
+       reviewer has actually looked at."""
+    me = (pr.get("author") or {}).get("login", "")
+    candidates = [
+        r for r in (pr.get("reviews") or [])
+        if MARKER_RE.search(r.get("body") or "") or (r.get("author") or {}).get("login") != me
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda r: r.get("submittedAt", ""))
+
+
 def needs_review(pr):
-    """True if unreviewed by the loop, or there are new commits since its marker."""
-    sha = loop_marker_sha(pr)
-    if sha is None:
+    """True if the PR's current head has no review yet against it, from the loop
+    or a human. A prior review only counts against the commit it was actually
+    submitted on - new commits since the most recent review (whoever left it) put
+    the PR back in the queue. This is what lets the loop re-pick-up a PR after a
+    human has commented and the author has since pushed more work, instead of
+    treating one human touch as a permanent hand-off regardless of what happens
+    after it."""
+    latest = latest_review(pr)
+    if latest is None:
         return True
-    return not (pr.get("headRefOid", "").startswith(sha) or sha.startswith(pr.get("headRefOid", "")))
+    reviewed_oid = (latest.get("commit") or {}).get("oid", "")
+    head = pr.get("headRefOid", "")
+    return not (head.startswith(reviewed_oid) or reviewed_oid.startswith(head))
 
 
 def short_title(title, max_len=60):
@@ -143,20 +180,20 @@ def short_title(title, max_len=60):
 
 
 def human_reviewer(pr):
-    """Latest non-self human reviewer login + whether they requested changes."""
+    """Latest non-self human reviewer login + whether they requested changes.
+    Only counts if their review is still current (submitted against the PR's
+    present head) - a stale human review (commits landed since) means the PR is
+    back in the loop's queue, not "with the author", so it doesn't count here."""
+    head = pr.get("headRefOid", "")
     nsr = [r for r in non_self_reviews(pr) if not MARKER_RE.search(r.get("body") or "")]
     if not nsr:
         return None, False
     nsr.sort(key=lambda r: r.get("submittedAt", ""), reverse=True)
     top = nsr[0]
+    oid = (top.get("commit") or {}).get("oid", "")
+    if not (head.startswith(oid) or oid.startswith(head)):
+        return None, False
     return (top.get("author") or {}).get("login"), top.get("state") == "CHANGES_REQUESTED"
-
-
-def has_human_review(pr):
-    """True if a non-self reviewer who is NOT the loop has reviewed this PR.
-    The loop is the first-pass reviewer - it leaves human-reviewed PRs alone and
-    attributes them to the human."""
-    return any(not MARKER_RE.search(r.get("body") or "") for r in non_self_reviews(pr))
 
 
 def loop_verdict(pr):
@@ -192,7 +229,7 @@ def cmd_actionable():
     out = []
     for repo in REPOS:
         for pr in load_open(repo):
-            if is_team_pr(pr) and needs_review(pr) and not has_human_review(pr):
+            if is_team_pr(pr) and needs_review(pr):
                 out.append({
                     "key": key(repo, pr["number"]), "repo": repo, "number": pr["number"],
                     "url": pr["url"], "title": pr["title"],
@@ -228,18 +265,20 @@ def cmd_render(verdicts_path):
             elif verdict in ("Looks good", "Minor comments", "Needs Judgment"):
                 awaiting.append((repo, pr, v))
             else:
-                # No loop verdict this run. A human review wins (the loop is the
-                # first-pass reviewer and steps aside for a human); otherwise fall
-                # back to the verdict the loop recorded in a previous run via its
-                # marker, so previously-reviewed-unchanged PRs keep their @claude tag.
+                # No loop verdict this run. A CURRENT human review wins (one
+                # submitted against the present head - human_reviewer() ignores
+                # stale ones); otherwise fall back to the verdict the loop recorded
+                # in a previous run via its marker, so previously-reviewed-unchanged
+                # PRs keep their @claude tag.
                 who, _ = human_reviewer(pr)
                 if who:
-                    # Any human review hands the ball to the author, not just a
-                    # formal CHANGES_REQUESTED. The team reviews with COMMENTED,
-                    # so a review with comments is still feedback the author owns
-                    # a response to. The loop is the first-pass reviewer; once a
-                    # human has engaged, the PR is out of "awaiting review" and
-                    # into the author's court.
+                    # Any current human review hands the ball to the author, not
+                    # just a formal CHANGES_REQUESTED - the team reviews with
+                    # COMMENTED, so a review with comments is still feedback the
+                    # author owns a response to. Once commits land past that
+                    # review, human_reviewer() stops returning it and needs_review()
+                    # puts the PR back in the loop's queue - it doesn't sit "with
+                    # the author" forever on the strength of one old comment.
                     v = {"reviewer": f"@{who}"}
                     followup.append((repo, pr, v))
                 else:
