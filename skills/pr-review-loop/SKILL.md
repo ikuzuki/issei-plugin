@@ -112,6 +112,20 @@ default set for cost reasons:
   Escalate to the full diff-gated panel only for a first-pass PR
   (`reviewed_before: false`) or a large re-review diff, where genuinely new
   surface warrants the specialists.
+- **Don't independently re-verify a finding below `Needs Changes` severity.**
+  `code-review`'s specialists already gate findings on confidence (~80%+)
+  before surfacing them - take a `Minor comments`/nit-tier finding at face
+  value and cite it directly rather than re-deriving it yourself (running
+  `terraform plan` locally, hand-tracing a script under `set -e`, re-checking
+  a cross-file assertion). Reserve that extra verification effort for a
+  finding that is a live candidate for `Needs Changes` - a real bug, a
+  security gap, or a data-loss risk - where being wrong actually costs
+  something. Observed cost: on the 2026-07-07 run, three clusters that landed
+  at `Looks good` each burned 90-140k tokens independently re-confirming
+  points already settled in a prior round - verification effort with zero
+  effect on the outcome. The two findings that genuinely needed hand
+  verification that run were both `Needs Changes`-tier, so this gate doesn't
+  touch the cases that matter.
 
 The remaining core finders (`code-reviewer`, `silent-failure-hunter`) run on
 every cluster; the diff-gated specialists fire only when their trigger is present
@@ -225,6 +239,27 @@ backlog to cap against. The answer to cost is making each PR cheap to review
 them. Bound only the fan-out concurrency (~5-6 cluster agents in flight) so you
 don't spawn dozens at once; the rest queue and drain. If a sub-agent errors,
 record it and carry on - fail loud, never drop a PR silently.
+
+**Batch small re-reviews into shared cluster agents.** The cluster from step 2
+(grouping by ticket) is still the unit of *review* - related PRs are read
+together for cross-PR context regardless of what follows here. But one
+dedicated *agent* per cluster pays fixed overhead - loading `coding-standards`,
+fetching prior-review threads, one full round-trip report back to the
+orchestrator - regardless of how small the diff is, and that overhead doesn't
+scale down for a one-line fix. Reserve a dedicated agent for: any first-pass
+cluster, any re-review with a 150+ line diff, and any cross-repo cluster -
+these deserve focused attention and are where most of the real findings live.
+Batch everything else - single-PR re-reviews under the small-diff threshold -
+into a shared agent that works through up to ~4 of them sequentially (still
+one isolated clone dir per PR each; the isolation requirement above doesn't
+relax) and returns one consolidated JSON array covering the batch instead of N
+separate reports. Don't batch a cluster you're unsure about into a group of 4 -
+if a small diff still feels like it could hide something (a recurring bug
+class, a security-adjacent change), give it its own agent instead; batching
+under time/attention pressure across several PRs makes it more likely a subtle
+finding gets skimmed past. At the team's typical daily volume (a handful of
+PRs changed since the last run) this collapses to one dedicated agent for
+anything non-trivial and one batched agent for the rest.
 
 ### 4. Assign a verdict and compose
 
@@ -344,6 +379,12 @@ lock), record it in the run summary rather than failing the run.
   (Hard Rule 5 - development phase).
 - Running `git-history-reviewer` on a first-pass (`reviewed_before: false`) PR -
   it has nothing to regress against and is the most expensive finder.
+- Independently re-verifying a `Minor comments`/nit-tier finding (re-running
+  `terraform plan`, hand-tracing a script) - burns tokens with no effect on
+  the outcome. Save that effort for a live `Needs Changes` candidate.
+- Spinning up a dedicated agent per cluster for every small re-review instead
+  of batching them - pays fixed per-agent overhead that doesn't scale down for
+  a one-line fix.
 - Validating anchors against `gh pr diff <n> --patch` - the per-commit format
   repeats files and gives wrong line numbers; use the combined `gh pr diff <n>`.
 - APPROVE / REQUEST_CHANGES / merge. Never.
