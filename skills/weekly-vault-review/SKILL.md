@@ -94,6 +94,15 @@ Do not fire this skill for ad-hoc vault questions — those are
    signals combined. Read the top 3-5 candidates' first ~200 lines
    to confirm; don't promote anything you can't justify.
 
+   **Tag each candidate with a consumer** — who will actually read
+   the distilled note. Knowledge with no reader rots, so this is a
+   gate, not a label: `team-adr` / `team-confluence` (a reusable
+   decision or pattern worth promoting to a team artefact),
+   `personal-lab-prep` / `personal-saa` (feeds Issei's learning /
+   role-prep track), or `personal-reference` (future-Issei on the
+   same system). **If a candidate has no plausible consumer, don't
+   surface it** — a note nobody will revisit isn't worth the distil.
+
    Cap output at 5 candidates. More than 5 means the rank failed;
    tighten it. Fewer than 3 is fine - the harvest doesn't always
    produce promotables.
@@ -159,6 +168,8 @@ Do not fire this skill for ad-hoc vault questions — those are
 
    1. `reference/sessions/YYYY-Www/<file>` — <one-line topic>.
       Signal: <length / files-touched / topic-gap / decision-shape>.
+      Consumer: <team-adr | team-confluence | personal-lab-prep |
+      personal-saa | personal-reference>.
       Suggested target: `<folder>/<slug>.md`.
       Suggested action: `distil-vault` on this with framing
       "<short framing for what to extract>".
@@ -192,17 +203,20 @@ Do not fire this skill for ad-hoc vault questions — those are
 
 ## Scheduling
 
-This skill is designed to run weekly via Claude's scheduled-tasks
-mechanism. Suggested cadence: Friday afternoon (end-of-week reflection)
-or Sunday evening (week-ahead prep). Set up via:
+This skill runs as the **second stage of the `weekly-knowledge-harvest`
+routine** (Monday, right after `harvest` lands last week's sessions), so
+it reviews a fully-harvested week. When fired that way it runs unattended,
+so it does one extra thing a manual call doesn't: **persist its report to
+`inbox/_distil-candidates-YYYY-Www.md`** so the candidates are a standing
+surface Issei reviews when he's next present (a chat-only report from an
+unattended run would evaporate). Writing its *own report* to `inbox/` is
+fine — `inbox/` is the staging area, not the curated vault; the read-only
+contract is about never editing curated notes, which still holds.
 
-```
-/schedule "Every Friday at 17:00" weekly-vault-review
-```
-
-Or via the scheduled-tasks MCP directly. If a scheduled routine fires
-this skill, treat it exactly like a manual call — produce the report
-and stop. Don't write, don't auto-distil, don't auto-fix.
+Whether scheduled or manual, produce the report and stop. Don't
+auto-distil, don't auto-fix, don't edit curated notes. The persisted
+candidate list is a to-do surface; Issei runs `distil-vault` on the ones
+he picks.
 
 The scheduling is intentionally light. Daily reviews would be noise
 at this vault size; weekly is the cadence where patterns become
@@ -210,8 +224,10 @@ visible.
 
 ## Anti-patterns
 
-- **Writing to the vault.** Read-only, always. Even "obvious" fixes
-  go in the suggested-actions section, not auto-applied.
+- **Writing to the *curated* vault.** Read-only there, always. Even
+  "obvious" fixes go in the suggested-actions section, not auto-applied.
+  (Persisting the review's own report to `inbox/` when scheduled is the
+  one allowed write — staging, not curation.)
 - **Auto-distilling pending inbox items.** Tempting and wrong.
   Distillation is a deliberate `distil-vault` call. The review
   flags candidates; it doesn't promote them.

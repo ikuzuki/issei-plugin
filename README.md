@@ -10,7 +10,7 @@ separate `knowledge-vault` repo.
 
 ## What's in it
 
-`skills/` - twenty-three skills, grouped by what they touch.
+`skills/` - twenty-four skills, grouped by what they touch.
 
 Vault skills (read/write the personal knowledge vault directly via
 filesystem; no MCP, no index):
@@ -55,6 +55,9 @@ Review / sprint skills:
   from Claude Code sessions against the live CDT sprint doc.
 - `sprint-demo-slide` - single-page HTML sprint-demo slide in Issei's
   visual style.
+- `jira-board-hygiene` - surfaces Issei's own CDT board drift (closed-
+  sprint stragglers, no-sprint, stale-in-progress) and suggests moves;
+  applies them only on confirmation. Read-and-suggest by default.
 
 Autopilot - presence, memory, and execution (part of Project Autopilot;
 these drive a dedicated local automation browser over CDP plus local
@@ -158,6 +161,7 @@ issei-plugin/
 │   ├── pr-review-loop/SKILL.md        # + build.py, references/
 │   ├── sprint-review-retro/SKILL.md
 │   ├── sprint-demo-slide/SKILL.md     # + references/
+│   ├── jira-board-hygiene/SKILL.md    # scripts in project-autopilot
 │   ├── working-memory/SKILL.md        # Autopilot; scripts in project-autopilot
 │   ├── morning-brief/SKILL.md         # Autopilot
 │   ├── presence-triage/SKILL.md       # Autopilot
