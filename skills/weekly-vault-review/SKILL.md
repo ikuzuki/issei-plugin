@@ -62,46 +62,58 @@ Do not fire this skill for ad-hoc vault questions — those are
 
    This is the "what's pending distillation" list.
 
-5. **Triage the harvest output — top promotion candidates.** This is
-   the harvest → distil gate. Without it, the harvest grows faster
-   than `distil-vault` keeps up, and the curated layer falls behind.
+5. **Triage the week's work for distillation — PRs/tickets AND
+   sessions, both first-class.** This is the harvest → distil gate.
+   Two signals, equally weighted; do NOT rank on session titles
+   alone (that misses most of the real work — the failure that
+   made a whole 6-week backfill look like "3 things").
 
-   Scope: glob `knowledge-vault/reference/sessions/YYYY-Www/` for
-   the current week's session files (and last week's if the review
-   window covers it). Also glob `harvest/` for any pending parquet
-   or extracts that haven't yet been folded into the session
-   archive.
+   **(a) The work spine — what actually shipped.** The reliable
+   index of what's worth capturing:
+   - `gh search prs --author=@me --state=closed --updated=">=<window-start>" --json number,title,repository,url`
+     (merged/closed authored PRs), plus PRs he reviewed if relevant.
+   - The window's CDT tickets that moved to Done / QA / code-review
+     (`jira_board.py`, or narrow JQL).
+   Group these into coherent **themes** — a theme is several
+   PRs/tickets on one topic (e.g. "ClickHouse serving stand-up",
+   "BFF ↔ data-plane wiring"), not one-candidate-per-PR.
 
-   Rank by promotion-worthiness. Read the YAML frontmatter of each
-   session file (cheap — just the block, not the body) and score
-   on these signals:
+   **(b) The thinking — why, and how Issei saw it.** For each theme,
+   open the session(s) on that topic in
+   `reference/sessions/YYYY-Www/` and read enough to capture his
+   ACTUAL REASONING — the decisions, the trade-offs weighed, what he
+   rejected, his opinion. **This is the vault's whole point:**
+   sessions carry his thinking ("here's why / this was my read"),
+   where PRs only carry "this was done". A theme with rich session
+   reasoning ranks ABOVE one that was mostly autonomous shipping
+   with thin human input. Grep session bodies for durable-thinking
+   signals: "decided", "going with", "rejected", "the trick is",
+   "in retrospect", "i'd lean", "the problem is".
 
-   - **Length.** Sessions over ~5000 chars carry real depth. Short
-     ones are usually one-off Qs.
-   - **Files touched.** `files_touched: 3+` means cross-file work,
-     not a single-file edit. Multi-file sessions are usually
-     pattern-generating.
-   - **Topic novelty.** Grep the curated vault for the session's
-     main topic (extracted from title). If the topic appears in 0-1
-     curated notes, the session may be filling a real gap. If it
-     appears in 5+, the session is likely re-covering ground.
-   - **Decision / pattern signal.** Grep the session body (Read
-     with offset/limit if large) for phrases that signal durable
-     content: "decided", "going with", "rejected", "the pattern
-     is", "the trick is", "in retrospect", "i'd lean".
+   **Rank themes** by: thinking-depth (is his reasoning actually
+   captured?), durability (a pattern/decision that recurs), and
+   coverage gap (grep curated notes — 0-1 = real gap, 5+ = already
+   covered). Read the primary session for each top theme to confirm;
+   don't promote anything you can't ground in real material.
 
-   Score each session loosely high / medium / low across the four
-   signals combined. Read the top 3-5 candidates' first ~200 lines
-   to confirm; don't promote anything you can't justify.
+   **What a vault note IS — and the consumer tag.** A vault note
+   captures **Issei's perspective and thinking** on the topic: his
+   understanding, the decisions and why, the trade-offs, his opinion
+   — NOT neutral team-wide documentation. That's the point of
+   distilling into the vault vs writing a Confluence page: the vault
+   is his angle, in his voice; Confluence is the team's shared
+   reference. So a note leads with "here's how I see X / here's why
+   we went this way", not "X does Y".
 
-   **Tag each candidate with a consumer** — who will actually read
-   the distilled note. Knowledge with no reader rots, so this is a
-   gate, not a label: `team-adr` / `team-confluence` (a reusable
-   decision or pattern worth promoting to a team artefact),
-   `personal-lab-prep` / `personal-saa` (feeds Issei's learning /
-   role-prep track), or `personal-reference` (future-Issei on the
-   same system). **If a candidate has no plausible consumer, don't
-   surface it** — a note nobody will revisit isn't worth the distil.
+   Tag each theme with a consumer (knowledge with no reader rots —
+   this is a gate): `personal-reference` (future-Issei on the same
+   system), `personal-lab-prep` / `personal-saa` (learning /
+   role-prep). For a theme that is *also* team-wide knowledge, still
+   write the vault note as **his perspective**, and separately FLAG
+   it `promote-to-confluence` — a distinct team artefact he authors
+   later, citing the vault, never the reverse (personal → team only).
+   Do NOT write Confluence-style team docs into the vault. Drop any
+   theme with no plausible reader.
 
    Cap output at 5 candidates. More than 5 means the rank failed;
    tighten it. Fewer than 3 is fine - the harvest doesn't always
@@ -164,15 +176,17 @@ Do not fire this skill for ad-hoc vault questions — those are
    - `inbox/<filename>` — <one-line guess at content>.
      Suggested target: `<folder>/<slug>.md`
 
-   ### Harvest triage — top promotion candidates
+   ### Distil candidates — themes from the window
 
-   1. `reference/sessions/YYYY-Www/<file>` — <one-line topic>.
-      Signal: <length / files-touched / topic-gap / decision-shape>.
-      Consumer: <team-adr | team-confluence | personal-lab-prep |
-      personal-saa | personal-reference>.
-      Suggested target: `<folder>/<slug>.md`.
-      Suggested action: `distil-vault` on this with framing
-      "<short framing for what to extract>".
+   1. **<theme>** — <one-line what shipped>.
+      Work: <the PRs/tickets, e.g. data-plane #29/#31, CDT-393/396>.
+      Thinking: `reference/sessions/YYYY-Www/<file>` — <what his
+      reasoning in-session actually covers>.
+      Coverage: <0-1 curated notes = gap | extends `<note>`>.
+      Consumer: <personal-reference | personal-lab-prep | personal-saa>
+      <+ promote-to-confluence if team-wide>.
+      Target: `<folder>/<slug>.md`.
+      distil-vault framing: "capture HIS perspective on <...>".
    2. ...
 
    (Cap at 5. "No promotion candidates this week" is a valid
