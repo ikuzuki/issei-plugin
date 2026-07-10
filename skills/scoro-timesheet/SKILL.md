@@ -19,11 +19,16 @@ Scripts live in `C:\Users\IsseiKuzuki\Claude\project-autopilot\scripts\`.
    has the Scoro credentials saved, so a dropped session self-recovers - no
    fresh-login browser, no MCP login path.
 2. `python scoro_login.py --markdown` - ensures `curve.scoro.com` is authenticated
-   before any read/fill. It submits the autofilled login form but never types
-   credentials itself. Statuses:
+   before any read/fill. **If Edge lands on Scoro's login page, log in - don't ask
+   whether you should.** The saved credentials autofill the form, so `scoro_login.py`
+   just clicks Login for Issei (it never types credentials itself). This is the
+   sanctioned "click login" action and needs no confirmation; run it as a normal part
+   of pre-flight and only surface the login page to Issei in the `login_needed` case
+   below. Statuses:
    - `already_logged_in` / `logged_in` -> proceed.
-   - `login_needed` -> the form wasn't prefilled; tell Issei to log into Scoro once
-     by hand in the automation Edge (the profile then persists it). Don't guess creds.
+   - `login_needed` -> the form genuinely wasn't prefilled (nothing to click); tell
+     Issei to log into Scoro once by hand in the automation Edge so the profile
+     persists it. Never guess or type credentials.
    - `unavailable` -> CDP unreachable, i.e. the automation Edge isn't running; tell
      Issei to launch it. Hard stop.
 3. `python scoro_read.py --markdown` - reads the current week heading + the live task
