@@ -1,27 +1,34 @@
 ---
 name: scoro-timesheet
-description: Fill in Issei's Scoro timesheet, driving the dedicated automation Edge over CDP (the same persistent, already-logged-in session the presence layer uses - no per-session login). Invoke when the user asks to fill, log, plan, submit, or backfill their Scoro timesheet, or says "fill in my timesheet", "do my timesheet", "log my hours in Scoro", "backfill last week's hours", or when the Friday-16:00 routine fires. Flow is gather requirements -> propose plan -> confirm -> fill cells -> offer to submit; never types into a cell before the user approves the plan, never submits without explicit confirmation.
+description: Fill in Issei's Scoro timesheet, driving the dedicated automation Edge over CDP (the same persistent session the presence layer uses - saved credentials, so a dropped session self-recovers; no per-session login). Invoke when the user asks to fill, log, plan, submit, or backfill their Scoro timesheet, or says "fill in my timesheet", "do my timesheet", "log my hours in Scoro", "backfill last week's hours", or when the Friday-16:00 routine fires. Flow is gather requirements -> propose plan -> confirm -> fill cells -> offer to submit; never types into a cell before the user approves the plan, never submits without explicit confirmation.
 ---
 
 # Scoro timesheet
 
 Drive Issei's Scoro timesheet via the **dedicated automation Edge over CDP** (the
-persistent profile that's already logged into Scoro - `curve.scoro.com`). No fresh
-browser, no per-session login. Flow: **gather requirements -> propose plan ->
-confirm -> fill cells**. Never type into cells before the user approves the plan.
+persistent profile signed into `curve.scoro.com`, with the Scoro credentials saved so
+a dropped session self-recovers via `scoro_login.py`). No fresh browser, no per-session
+MCP login. Flow: **gather requirements -> propose plan -> confirm -> fill cells**.
+Never type into cells before the user approves the plan.
 
 Scripts live in `C:\Users\IsseiKuzuki\Claude\project-autopilot\scripts\`.
 
 ## Step 0 - Pre-flight
 
-1. The automation Edge must be running (`launch_automation_edge.ps1`) and logged
-   into Scoro (the session persists in that profile). If reads error with "Scoro
-   unavailable", tell Issei to open/verify the automation Edge - don't fall back to a
-   fresh-login browser (that's the old MCP path we moved off, and it re-triggers a
-   login).
-2. `python scoro_read.py --markdown` - reads the current week heading + the live task
+1. The automation Edge must be running (`launch_automation_edge.ps1`). Its profile
+   has the Scoro credentials saved, so a dropped session self-recovers - no
+   fresh-login browser, no MCP login path.
+2. `python scoro_login.py --markdown` - ensures `curve.scoro.com` is authenticated
+   before any read/fill. It submits the autofilled login form but never types
+   credentials itself. Statuses:
+   - `already_logged_in` / `logged_in` -> proceed.
+   - `login_needed` -> the form wasn't prefilled; tell Issei to log into Scoro once
+     by hand in the automation Edge (the profile then persists it). Don't guess creds.
+   - `unavailable` -> CDP unreachable, i.e. the automation Edge isn't running; tell
+     Issei to launch it. Hard stop.
+3. `python scoro_read.py --markdown` - reads the current week heading + the live task
    rows + each row's Mon-Fri values. Trust these *live* rows, not a hardcoded list
-   (the task set changes; e.g. Week 27 shows Product R&D / Enablement / Meetings plus
+   (the task set changes; e.g. Week 28 shows Product R&D / Enablement / Meetings plus
    the Internal Activities rows).
 
 ## Step 1 - Identify the week
