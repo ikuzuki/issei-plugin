@@ -1,6 +1,6 @@
 ---
 name: scoro-timesheet
-description: Fill in Issei's Scoro timesheet, driving the dedicated automation Edge over CDP (the same persistent session the presence layer uses - saved credentials, so a dropped session self-recovers; no per-session login). Invoke when the user asks to fill, log, plan, submit, or backfill their Scoro timesheet, or says "fill in my timesheet", "do my timesheet", "log my hours in Scoro", "backfill last week's hours", or when the Friday-16:00 routine fires. Flow is gather requirements -> propose plan -> confirm -> fill cells -> offer to submit; never types into a cell before the user approves the plan, never submits without explicit confirmation.
+description: Fill in Issei's Scoro timesheet, driving the dedicated automation Edge over CDP (the same persistent session the presence layer uses - saved credentials, so a dropped session self-recovers; no per-session login). Invoke when the user asks to fill, log, plan, submit, or backfill their Scoro timesheet, or says "fill in my timesheet", "do my timesheet", "log my hours in Scoro", "backfill last week's hours", or when the Friday-16:00 routine fires. Also books time off / annual leave / holiday via Scoro's Time off requests module ("book holiday in Scoro", "log my AL", "book time off", "book leave"). Flow is gather requirements -> propose plan -> confirm -> fill cells -> offer to submit; never types into a cell before the user approves the plan, never submits without explicit confirmation.
 ---
 
 # Scoro timesheet
@@ -77,7 +77,9 @@ pipeline/model work) lands in **Product R&D** (or the relevant model row), not
 Enablement. Default Issei's bulk hours to Product R&D unless the week was genuinely
 dominated by process/ceremony/accelerator work. Apply going forward only.
 
-Also: **annual leave must be logged in both Scoro and Outlook.**
+Also: **annual leave must be logged in both Scoro and Outlook** - book the Scoro
+side via the [Booking time off](#booking-time-off--annual-leave) section below (the
+timesheet grid has no Annual Leave row; leave lives in a separate module).
 
 ## Step 4 - Fill cells (after confirmation)
 
@@ -109,6 +111,35 @@ Not submitted - submit yourself, or shall I click Submit week?
 **Never click Submit without explicit confirmation.** Submission is irreversible
 from Issei's side (needs admin to reopen). For the Friday-16:00 routine: auto-*fill*
 the plan, then stop and surface it for Issei to review + submit - never auto-submit.
+
+## Booking time off / annual leave
+
+Scoro's **Time off requests** module (top nav) is separate from the timesheet grid: a
+full-day AL / holiday goes here, *not* in a timesheet cell - there is no Annual Leave
+row in the grid. `scoro_timeoff.py` drives the New form end to end:
+
+```
+python scoro_timeoff.py --date 24/07/2026                # Vacation, Approved, Full Day
+python scoro_timeoff.py --date 24/07/2026 --dry          # fill but DON'T Save (verify first)
+python scoro_timeoff.py --date 12/08/2026 --type "Sick Leave" --status Submitted
+```
+
+- **Type of Time Off**: Vacation, Sick Leave, Parental Leave, Study Leave, Other time
+  off, Extra availability, Compassionate Leave. **Vacation == annual leave / holiday**
+  (the default).
+- **Status**: Approved (default) / Submitted / Rejected / Cancelled. Only set Approved
+  when Issei says so; otherwise Submitted and let the manager approve.
+- **Dates** is a 3-month range picker; clicking a day mis-fires (three "24"s on screen
+  plus a week-number 24 - easy to land on the wrong month), so the script sets the
+  field value directly in `dd/mm/yyyy`. One-day requests only; a genuine range would
+  need extending the script.
+- **Duration** defaults to Full Day; **Hours** then saves as `0:00 h` - expected
+  (Hours is only used for partial days), not a bug.
+- Creates a real HR record. Run `--dry` first, eyeball owner/status/type/date, then do
+  the live run. Writing an *approved* record is a standing-record change - confirm with
+  Issei before the non-dry run, exactly like the Submit gate. Verify after via the
+  saved `/timeoffrequests/view/<id>` page.
+- **Also log the leave in Outlook** - Scoro is not the calendar source of truth.
 
 ## Not for
 
