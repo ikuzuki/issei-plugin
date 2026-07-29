@@ -1,6 +1,7 @@
 ---
 name: pr-review-loop
 description: Autonomous, scheduled PR-review loop over the CDT team's open pull requests. Surfaces PRs by lifecycle state, clusters related ones, fans out to cheaper-model sub-agents for the review, posts a structured top-level verdict plus inline comments in a neutral voice, and ALWAYS defers approval and merge to a human. Idempotent - skips PRs already reviewed at the current head commit. Its run output is a status digest that supersedes cdt-daily-pr-digest. Use when a scheduled routine fires it, or when the user says "run the PR review loop", "do the PR review pass", "review the open CDT PRs", or "/pr-review-loop". Distinct from `turbo-pr-review` (interactive, single PRs, confirms before posting) and `intech-tools:code-review` (heavy multi-agent single-PR audit). Do NOT use for an interactive walkthrough of one PR (use `turbo-pr-review`) or for code not yet raised as a PR. Repo set and team filter live in `build.py`; comment voice in `references/comment-voice.md`.
+disable-model-invocation: true
 ---
 
 # PR review loop
