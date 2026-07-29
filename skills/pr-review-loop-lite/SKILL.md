@@ -1,6 +1,6 @@
 ---
 name: pr-review-loop-lite
-description: Token-efficient variant of the autonomous, scheduled CDT PR-review loop. Same spot / group / review / share spine and the same hard rules as `pr-review-loop`, but replaces the per-PR `intech-tools:code-review` specialist fan-out with a single grounded review pass per PR - one Sonnet agent that loads the coding standards once and reviews all dimensions (bugs, silent failures, test gaps, type design, comment accuracy, scope) in one context. Posts the same neutral top-level verdict plus inline comments, uses the SAME reviewed-at marker as `pr-review-loop` (so the two are interchangeable and idempotent against each other), and ALWAYS defers approval and merge to a human. Use when a scheduled routine fires it, or when the user says "run the lite PR review loop", "do the cheap PR review pass", "/pr-review-loop-lite". Distinct from `pr-review-loop` (heavier, specialist fan-out per PR), `turbo-pr-review` (interactive, single PRs, confirms before posting), and `intech-tools:code-review` (heavy multi-agent single-PR audit). Repo set, team filter, marker detection and digest rendering are reused unchanged from `pr-review-loop/build.py`; comment voice from `pr-review-loop/references/comment-voice.md`.
+description: Token-efficient variant of the autonomous, scheduled CDT PR-review loop. Same spot / group / review / share spine and the same hard rules as `pr-review-loop`, but replaces the per-PR `intech-tools:code-review` specialist fan-out with a single grounded review pass per PR - one Sonnet agent that loads the coding standards once and reviews all dimensions (bugs, silent failures, test gaps, type design, comment accuracy, scope) in one context. Posts the same neutral top-level verdict plus inline comments, uses the SAME reviewed-at marker as `pr-review-loop` (so the two are interchangeable and idempotent against each other), and ALWAYS defers approval and merge to a human. Use when a scheduled routine fires it, or when the user says "run the lite PR review loop", "do the cheap PR review pass", "/pr-review-loop-lite". Distinct from `pr-review-loop` (heavier, specialist fan-out per PR), `understand-prs` (interactive, single PRs, confirms before posting), and `intech-tools:code-review` (heavy multi-agent single-PR audit). Repo set, team filter, marker detection and digest rendering are reused unchanged from `pr-review-loop/build.py`; comment voice from `pr-review-loop/references/comment-voice.md`.
 ---
 
 # PR review loop (lite)
@@ -278,7 +278,7 @@ lock), record it in the run summary rather than failing the run.
 
 The token-efficient, single-pass version of the scheduled review loop. NOT the
 specialist-fan-out version (`pr-review-loop`), interactive walkthroughs
-(`turbo-pr-review`), multi-agent deep audits (`intech-tools:code-review`), or
+(`understand-prs`), multi-agent deep audits (`intech-tools:code-review`), or
 anything that approves/merges. Validate it against `pr-review-loop` on a shared
 set of PRs - diff what the single pass misses versus the fan-out - before letting
 it become the default scheduled loop.

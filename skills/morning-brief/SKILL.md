@@ -39,7 +39,7 @@ Then, from `C:\Users\IsseiKuzuki\Claude\project-autopilot\scripts\`:
 
 It emits markdown: mid-flight work (newest-first working-state notes), **Awaiting
 your review**, **Awaiting your re-review** (PRs where the head moved since Issei
-last reviewed - the candidate for `turbo-pr-review`'s re-review mode), **Your open
+last reviewed - the candidate for `understand-prs`'s re-review mode), **Your open
 PRs** with review state, and in catch-up mode **Shipped while you were away**. Use
 `--json` instead if you want to manipulate the data before rendering. The script
 reports which gh account it used in its header - if it says anything but
@@ -125,7 +125,7 @@ sit on) vs blocked on Issei (the real work). Propose; he decides.
 
 End by offering the obvious next action, gated on his word:
 
-- re-review queue has items -> "want me to run turbo-pr-review on #48?"
+- re-review queue has items -> "want me to run understand-prs on #48?"
 - needs a standup -> "/standup-update" (separate, team-facing artefact)
 - resume a specific thread -> working-memory (`recall.py show <topic>`)
 

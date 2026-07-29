@@ -10,7 +10,7 @@ separate `knowledge-vault` repo.
 
 ## What's in it
 
-`skills/` - twenty-four skills, grouped by what they touch.
+`skills/` - twenty-seven skills, grouped by what they touch.
 
 Vault skills (read/write the personal knowledge vault directly via
 filesystem; no MCP, no index):
@@ -45,9 +45,20 @@ Voice / doc skills:
 
 Review / sprint skills:
 
-- `turbo-pr-review` - lightweight human-in-the-loop PR walkthrough;
-  drafts inline comments in Issei's voice, posts only on explicit
-  confirmation. Lighter than `intech-tools:code-review`.
+- `understand-prs` - PRs someone sent Issei to review. Reconstructs the
+  context (including whatever the automated pass already said), explains
+  each PR in plain English, pulls out what's worth learning from it, and
+  surfaces where his own judgement, product knowledge or completeness
+  sense is needed - with the cross-check already done. Drafts inline
+  comments in his voice, posts only on explicit confirmation. Supersedes
+  the former `turbo-pr-review`.
+- `share-prs` - the outbound direction: turns a batch of his own PRs into
+  the message he pastes to a reviewer. One bullet per PR with the PR and
+  Jira links, a plain-English what-it-does, a why-look-here steer, the
+  review state, and a scope note. Never posts anywhere.
+- `my-open-prs` - private status table of every open PR he's authored,
+  drafts included, grouped by dependency chain and system area, with the
+  linked ticket, current state and the next action. Read-only.
 - `pr-review-loop` - autonomous, scheduled review over the CDT team's
   open PRs; posts a neutral verdict + inline comments, always defers
   approval and merge to a human.
@@ -157,8 +168,11 @@ issei-plugin/
 │   ├── issei-voice/SKILL.md
 │   ├── blog-voice/SKILL.md            # + references/
 │   ├── exec-summary/SKILL.md
-│   ├── turbo-pr-review/SKILL.md
+│   ├── understand-prs/SKILL.md        # + references/
+│   ├── share-prs/SKILL.md             # + references/
+│   ├── my-open-prs/SKILL.md
 │   ├── pr-review-loop/SKILL.md        # + build.py, references/
+│   ├── pr-review-loop-lite/SKILL.md
 │   ├── sprint-review-retro/SKILL.md
 │   ├── sprint-demo-slide/SKILL.md     # + references/
 │   ├── jira-board-hygiene/SKILL.md    # scripts in project-autopilot

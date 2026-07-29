@@ -1,6 +1,6 @@
 ---
 name: ticket-dispatch
-description: Take a Jira ticket from key to a reviewable draft PR - the execution loop. Ground the ticket with the context-router, draft an implementation spec and get Issei's sign-off, then implement it in an isolated git worktree, verify with the repo's tests + ruff, and open a DRAFT PR for Issei to review and merge. Use when Issei says "dispatch CDT-nnn", "work on CDT-nnn", "pick up <ticket>", "implement this ticket", "start on CDT-nnn", "/ticket-dispatch", or hands over a ticket to build. Two hard human gates: Issei approves the spec before any code, and Issei reviews + merges the PR (never auto-merge, never mark ready-for-review without asking). Automates the work, not a misrepresentation of it - the PR reflects real, tested changes Issei reviews with his own judgement. Distinct from turbo-pr-review / pr-review-loop (reviewing others' PRs) and context-assemble (grounding only, no build).
+description: Take a Jira ticket from key to a reviewable draft PR - the execution loop. Ground the ticket with the context-router, draft an implementation spec and get Issei's sign-off, then implement it in an isolated git worktree, verify with the repo's tests + ruff, and open a DRAFT PR for Issei to review and merge. Use when Issei says "dispatch CDT-nnn", "work on CDT-nnn", "pick up <ticket>", "implement this ticket", "start on CDT-nnn", "/ticket-dispatch", or hands over a ticket to build. Two hard human gates: Issei approves the spec before any code, and Issei reviews + merges the PR (never auto-merge, never mark ready-for-review without asking). Automates the work, not a misrepresentation of it - the PR reflects real, tested changes Issei reviews with his own judgement. Distinct from understand-prs / pr-review-loop (reviewing others' PRs) and context-assemble (grounding only, no build).
 ---
 
 # Ticket dispatch
@@ -115,7 +115,7 @@ assume the merge happened.
 
 ## Not for
 
-- Reviewing someone else's PR - that's `turbo-pr-review` / `pr-review-loop`.
+- Reviewing someone else's PR - that's `understand-prs` / `pr-review-loop`.
 - Just gathering context without building - that's `context-assemble`.
 - Merging, deploying, or releasing - out of scope by design.
 - Overnight / unattended dispatch - a later phase; today's loop is in-session with Issei.
