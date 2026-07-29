@@ -160,7 +160,15 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
+  }
+  .hero-question {
+    margin: 0 0 12px 30px;
+    font-size: 14.5px;
+    font-weight: 500;
+    color: var(--navy);
+    font-style: italic;
+    line-height: 1.4;
   }
   .hero-grid {
     display: grid;
@@ -190,7 +198,7 @@
     font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
     font-weight: 700;
   }
-  .sql code {
+  code.sql {
     white-space: pre;
     display: block;
     margin-top: 4px;
@@ -394,6 +402,12 @@
       <!-- REPLACE: hero section title. Names the proof moment. -->
       <span class="section-title">One question, on the new engine, against real data</span>
     </div>
+    <!--
+      REPLACE: hero-question. Plain-English narration of what the SQL is asking, in quotes.
+      This is for the business-audience viewer who won't read the SQL. Keep it short - one sentence,
+      question form, names the slice (category) and the window. Italic + quoted in render.
+    -->
+    <div class="hero-question">"Which Water brands lead by mention volume in the last 60 days, and how positive is the sentiment?"</div>
     <div class="hero-grid">
 
       <!--

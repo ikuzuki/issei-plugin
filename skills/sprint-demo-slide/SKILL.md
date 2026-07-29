@@ -63,8 +63,9 @@ Dimensions: `1600x900`, scaled in a `.slide` element on `#e9ecf1` body. Flex-cen
 ### Hero
 
 - Numbered section label (`1` in a navy circle) + uppercase cyan title naming the proof moment.
+- **Narration line** (`.hero-question`) below the section label - plain-English version of what the SQL is asking, in quotes, navy italic. Names the slice (category, surface) and the window. The hero's audience is business viewers who won't read the SQL; the narration is what tells them what to look for in the result. Required, not optional.
 - Two-column grid, ~1.05fr / 0.95fr. Left = code or screenshot artefact; right = result or output.
-- Left panel uses dark code styling (`#0e1b2d` bg, monospace, syntax-highlighted: keywords cyan, strings amber, functions soft-green, comments grey-italic). Add a tiny top-right `panel-label` like `query &middot; clickhouse dev`.
+- Left panel uses dark code styling (`#0e1b2d` bg, monospace, syntax-highlighted: keywords cyan, strings amber, functions soft-green, comments grey-italic). Add a tiny top-right `panel-label` like `query &middot; clickhouse dev`. The code block selector is `code.sql`, not `.sql code` - the class is on the code element itself.
 - Right panel: white card with head row (label + green timing chip), result table with right-aligned numerics, brand-name first column in navy-bold, italic footer making the rhetorical point (one short line - this is where the previous-deck callback lives).
 
 ### Evidence cards band
