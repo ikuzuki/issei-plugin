@@ -158,10 +158,19 @@ context to front-load.
 
 ### 8. Surface, don't send
 
-Print the message as a fenced block for clean copy-paste, then a short
-Claude-to-Issei note (outside the block) for anything he should know but that
-shouldn't go in the message: a PR with no ticket, a draft included, a conflict
-he may not have noticed, a bullet where the *why* was guessed and needs a check.
+**Print the message as rendered markdown, not inside a code fence.** A fenced
+block shows the raw syntax, so the links arrive at Teams as literal `[text](url)`
+and the bullets as asterisks - Issei has to rewrite the formatting by hand, which
+is the opposite of paste-ready. Rendered markdown means the hyperlinks are live
+and the bullets are bullets, and it copies across with its formatting intact.
+Separate it from the surrounding prose with a rule above and below so the
+boundary of what to copy is unambiguous. If a paste flattens the links anyway,
+offer to publish the message as an HTML page he can select and copy instead.
+
+Then a short Claude-to-Issei note, clearly outside the message, for anything he
+should know but that shouldn't go in it: a PR with no ticket, a draft included, a
+conflict he may not have noticed, a bullet where the *why* was guessed and needs
+a check.
 
 Never post to GitHub, Teams, or anywhere else. Output is text for Issei to send.
 
@@ -204,6 +213,8 @@ Never post to GitHub, Teams, or anywhere else. Output is text for Issei to send.
 - **A scope note that's just a file count.** "(6 files)" tells nobody anything.
   "(One source module plus wiring through five existing ones, Terraform for the
   leases table, two new test modules, all green)" does.
+- **Fencing the message.** A code block hands over raw markdown syntax rather
+  than a paste-ready message. Render it.
 - **Closing recaps.** "Let me know if you have any questions!" adds nothing.
 - **Tables or headings.** Teams renders them inconsistently.
 
