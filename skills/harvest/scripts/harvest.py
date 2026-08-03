@@ -75,11 +75,39 @@ WORK_CWD_FRAGMENTS = [
 FPL_CWD_FRAGMENTS = ["/fpl-platform", "/fpl project"]
 
 EXCLUDED_KEYWORDS = [
-    r"\bsalary\b", r"\bcomp(ensation)?\b", r"\bhr\b",
+    r"\bsalary\b", r"\bcompensation\b",
     r"\bperformance review\b", r"\bterminat(ed|ion)\b",
     r"\bdisciplinary\b", r"\bmedical\b", r"\btherapist\b",
+    r"\bhuman resources\b",
+    r"\bhr (team|dept|department|meeting|complaint|issue|rep|advisor)\b",
+    r"\b(from|our|the|with|to|contact) hr\b",
 ]
 EXCLUDED_RE = re.compile("|".join(EXCLUDED_KEYWORDS), re.IGNORECASE)
+
+# Injected wrappers (scheduled-task prompts, system reminders, command
+# caveats) are not user-authored content and must not drive privacy
+# routing - notably, a scheduled task that quotes this module's own
+# keyword list would otherwise self-trip the excluded filter. Strip them
+# before matching. Handles unclosed blocks by running to end-of-message.
+INJECTED_BLOCK_RE = re.compile(
+    r"<(scheduled-task|system-reminder|local-command-caveat)\b[^>]*>.*?(?:</\1>|\Z)",
+    re.IGNORECASE | re.DOTALL,
+)
+# Skill bodies injected by the Skill tool ("Base directory for this
+# skill: ...") and auto-generated continuation summaries are likewise
+# not user-authored. A skill's own SKILL.md may document these very
+# keywords (e.g. standup-update mirrors this privacy list), so scanning
+# them self-trips the filter. Drop from the marker to end-of-message.
+INJECTED_TEXT_RE = re.compile(
+    r"(?:Base directory for this skill:"
+    r"|This session is being continued from a previous conversation).*",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _scrub_injected(msg: str | None) -> str:
+    m = INJECTED_BLOCK_RE.sub(" ", msg or "")
+    return INJECTED_TEXT_RE.sub(" ", m)
 
 WORKTREE_RE = re.compile(r"[\\/]\.claude[\\/]worktrees[\\/][^\\/]+", re.IGNORECASE)
 
@@ -97,7 +125,7 @@ def canonicalise_cwd(cwd: str | None) -> str | None:
 
 
 def privacy_route(cwd_canon: str | None, first_messages: list[str]) -> tuple[str, str | None]:
-    blob = "\n".join(m or "" for m in first_messages[:3])
+    blob = "\n".join(_scrub_injected(m) for m in first_messages[:3])
     m = EXCLUDED_RE.search(blob)
     if m:
         return "excluded", m.group(0)
