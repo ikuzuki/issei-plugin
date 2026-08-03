@@ -43,6 +43,15 @@ TEAM = {
 
 RELEASE_BOTS = {"release-please[bot]", "github-actions[bot]"}
 
+# The four verdicts the skill may write into a verdicts map. Validated on load so
+# a typo is loud rather than silently rebucketed into "awaiting review".
+VERDICTS = ("Looks good", "Minor comments", "Needs Changes", "Needs Judgment")
+
+# Review states that represent a review having actually happened. PENDING is an
+# unsubmitted draft, and DISMISSED has been explicitly retracted; neither is
+# coverage.
+ACTIVE_REVIEW_STATES = {"APPROVED", "CHANGES_REQUESTED", "COMMENTED"}
+
 # The marker every loop review leaves; drives idempotency + attribution.
 MARKER_RE = re.compile(r"<!--\s*pr-review-loop:\s*reviewed-at=([0-9a-fA-F]+)\s*-->")
 
@@ -67,6 +76,42 @@ def gh_json(args):
         return json.loads(out.stdout)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError):
         return []
+
+
+def submitted_at(review):
+    """Submission timestamp, or "" if there isn't one. GitHub sends
+    `submittedAt: null` on a PENDING review, so `.get("submittedAt", "")` returns
+    None rather than the default - the key is present, the value is null - and
+    every comparison it feeds then raises."""
+    return review.get("submittedAt") or ""
+
+
+def is_real_review(r):
+    """Whether a review entry represents review coverage.
+
+    Two things it screens out. A PENDING (unsubmitted) or DISMISSED (retracted)
+    review is not coverage, and a PENDING one carrying the loop's marker would
+    otherwise suppress the PR indefinitely. And GitHub records a bare inline
+    comment as a review with an empty body, which is indistinguishable from an
+    artefact in this payload - `gh pr view` gives no inline-comment count - so an
+    empty-bodied COMMENTED review is not counted. That errs towards re-reviewing
+    a PR someone has commented on, which the marker makes cheap, rather than
+    silently skipping one nobody has read."""
+    if r.get("state") not in ACTIVE_REVIEW_STATES:
+        return False
+    if (r.get("body") or "").strip():
+        return True
+    return r.get("state") in {"APPROVED", "CHANGES_REQUESTED"}
+
+
+def same_commit(head, oid):
+    """Whether a review's commit oid is the PR's current head.
+
+    Both are full 40-character SHAs in the live payload, so this is equality, not
+    a prefix match. A prefix match treats an empty oid as matching everything,
+    and `commit` is null whenever a force-push orphans the reviewed commit - the
+    exact case where the PR most needs re-reviewing."""
+    return bool(head) and bool(oid) and head == oid
 
 
 def load_open(repo):
@@ -122,8 +167,8 @@ def loop_marker_sha(pr):
     latest = ""
     for r in (pr.get("reviews") or []):
         m = MARKER_RE.search(r.get("body") or "")
-        if m and r.get("submittedAt", "") >= latest:
-            latest, sha = r.get("submittedAt", ""), m.group(1)
+        if m and is_real_review(r) and submitted_at(r) >= latest:
+            latest, sha = submitted_at(r), m.group(1)
     return sha
 
 
@@ -149,11 +194,12 @@ def latest_review(pr):
     me = (pr.get("author") or {}).get("login", "")
     candidates = [
         r for r in (pr.get("reviews") or [])
-        if MARKER_RE.search(r.get("body") or "") or (r.get("author") or {}).get("login") != me
+        if is_real_review(r)
+        and (MARKER_RE.search(r.get("body") or "") or (r.get("author") or {}).get("login") != me)
     ]
     if not candidates:
         return None
-    return max(candidates, key=lambda r: r.get("submittedAt", ""))
+    return max(candidates, key=submitted_at)
 
 
 def needs_review(pr):
@@ -169,7 +215,7 @@ def needs_review(pr):
         return True
     reviewed_oid = (latest.get("commit") or {}).get("oid", "")
     head = pr.get("headRefOid", "")
-    return not (head.startswith(reviewed_oid) or reviewed_oid.startswith(head))
+    return not same_commit(head, reviewed_oid)
 
 
 def short_title(title, max_len=60):
@@ -185,13 +231,16 @@ def human_reviewer(pr):
     present head) - a stale human review (commits landed since) means the PR is
     back in the loop's queue, not "with the author", so it doesn't count here."""
     head = pr.get("headRefOid", "")
-    nsr = [r for r in non_self_reviews(pr) if not MARKER_RE.search(r.get("body") or "")]
+    nsr = [
+        r for r in non_self_reviews(pr)
+        if is_real_review(r) and not MARKER_RE.search(r.get("body") or "")
+    ]
     if not nsr:
         return None, False
-    nsr.sort(key=lambda r: r.get("submittedAt", ""), reverse=True)
+    nsr.sort(key=submitted_at, reverse=True)
     top = nsr[0]
     oid = (top.get("commit") or {}).get("oid", "")
-    if not (head.startswith(oid) or oid.startswith(head)):
+    if not same_commit(head, oid):
         return None, False
     return (top.get("author") or {}).get("login"), top.get("state") == "CHANGES_REQUESTED"
 
@@ -207,7 +256,7 @@ def loop_verdict(pr):
               if MARKER_RE.search(r.get("body") or "")]
     if not marked:
         return None
-    marked.sort(key=lambda r: r.get("submittedAt", ""), reverse=True)
+    marked.sort(key=submitted_at, reverse=True)
     m = LOOP_VERDICT_RE.search(marked[0].get("body") or "")
     return m.group(1) if m else None
 
@@ -217,7 +266,7 @@ def approver(pr):
     apps = [r for r in non_self_reviews(pr) if r.get("state") == "APPROVED"]
     if not apps:
         return None
-    apps.sort(key=lambda r: r.get("submittedAt", ""), reverse=True)
+    apps.sort(key=submitted_at, reverse=True)
     return (apps[0].get("author") or {}).get("login")
 
 
@@ -240,9 +289,30 @@ def cmd_actionable():
     print(json.dumps(out, indent=2))
 
 
+def validate_verdicts(verdicts):
+    """Raise on any verdict outside VERDICTS.
+
+    The verdicts map is model-written, so a near-miss ("Needs changes", "LGTM")
+    is the likely failure. Unvalidated it falls through every bucket check into
+    the no-verdict branch, where the entry is rebucketed as awaiting review and
+    its reviewer and note are dropped - the finding just disappears from the
+    digest. Better to refuse the render."""
+    bad = {
+        k: v.get("verdict") for k, v in verdicts.items()
+        if v.get("verdict") is not None and v.get("verdict") not in VERDICTS
+    }
+    if bad:
+        listed = ", ".join(f"{k}: {v!r}" for k, v in sorted(bad.items()))
+        raise ValueError(
+            f"unknown verdict(s) in the verdicts map: {listed}. "
+            f"Must be one of {', '.join(VERDICTS)}."
+        )
+
+
 def cmd_render(verdicts_path):
     with open(verdicts_path, encoding="utf-8") as f:
         verdicts = json.load(f)  # {"<repo>#<n>": {"verdict": "...", "reviewer": "@x", "note": "..."}}
+    validate_verdicts(verdicts)
 
     since = window_start()
     shipped, approved, awaiting, followup = [], [], [], []
