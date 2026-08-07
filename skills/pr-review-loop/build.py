@@ -31,8 +31,8 @@ ORG = "curveanalytics"
 REPOS = [
     "intech-hub", "intech-cicd", "intech-infra", "intech-data", "intech-etl",
     "intech-models", "intech-experience", "intech-control-plane",
-    "intech-compute-plane", "intech-data-plane", "intech-experience-ui",
-    "intech-ai-plugin",
+    "intech-compute-plane", "intech-data-plane", "intech-ingest",
+    "intech-transform", "intech-experience-ui", "intech-ai-plugin",
 ]
 
 TEAM = {
