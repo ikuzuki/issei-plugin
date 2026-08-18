@@ -40,8 +40,9 @@ Voice / doc skills:
 
 - `issei-voice` - short-to-medium async comms in Issei's voice.
 - `blog-voice` - long-form technical writing in Issei's voice.
-- `exec-summary` - condense a saturated spike / PoC / doc into a tight,
-  outcome-focused doc a human reads in ~5 minutes; anti-AI-slop.
+- `exec-summary` - catch-up summaries of a chat: the last turn, the whole
+  session, or another Claude Code session found by id / title / topic.
+  Header plus bold-led bullets, one point each, fits a screen.
 
 Review / sprint skills:
 
