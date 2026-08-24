@@ -1066,9 +1066,44 @@ def emit_rollups(rows: list[dict], daily_dir: Path) -> list[Path]:
         _section("Confluence pages", {"confluence_page"})
         _section("Local markdown", {"local_md"})
         _section("PRs & reviews", {"github_pr", "github_review"})
-        fp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        body = "\n".join(lines) + "\n"
+        foreign = _foreign_sections(fp)
+        if foreign:
+            body = body.rstrip("\n") + "\n\n" + foreign
+        fp.write_text(body, encoding="utf-8")
         written.append(fp)
     return written
+
+
+# Headings emit_rollups regenerates from parquet. Anything else in an existing
+# rollup belongs to another writer (activity_rollup.py appends Jira and
+# Confluence sections) and has to survive the rewrite.
+ROLLUP_OWNED_HEADINGS = {
+    "## Chat threads",
+    "## Confluence pages",
+    "## Local markdown",
+    "## PRs & reviews",
+}
+
+
+def _foreign_sections(path: Path) -> str:
+    if not path.exists():
+        return ""
+    sections: list[list[str]] = []
+    current: list[str] | None = None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## "):
+            if line.strip() in ROLLUP_OWNED_HEADINGS:
+                current = None
+                continue
+            current = [line]
+            sections.append(current)
+            continue
+        if current is not None:
+            current.append(line)
+    if not sections:
+        return ""
+    return "\n\n".join("\n".join(s).rstrip() for s in sections) + "\n"
 
 
 def _short_ident(r: dict) -> str:
