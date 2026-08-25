@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TITLE HERE</title>
+<style>
+  :root {
+    --navy:#000D45; --muted:#3D4D80; --subtle:#6B7BAA; --primary:#0022B3; --accent:#1D42FF;
+    --mid:#2A8CFF; --cyan:#00C0FF; --green:#00B050; --pink:#FF3E6E; --yellow:#FFC91D;
+    --tint:#F0F4FF; --rule:#d9e0f0; --line:#a9b4d6; --dark:#0f0f14; --dark-muted:#A9B4D6;
+    --c-compute:#ED7100; --c-storage:#7AA116; --c-db:#C925D1; --c-net:#8C4FFF;
+    --c-sec:#DD344C; --c-mig:#01A88D; --c-int:#E7157B;
+  }
+  html,body { margin:0; padding:0; background:#e9ecf1; font-family:"Century Gothic","Urbanist","Segoe UI",system-ui,sans-serif; color:var(--navy); -webkit-font-smoothing:antialiased; height:100%; overflow:hidden; }
+  .stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  .deck { position:relative; width:1600px; height:900px; transform-origin:center center; }
+  .slide { position:absolute; inset:0; width:1600px; height:900px; background:#fff; border-radius:6px; box-shadow:0 4px 32px rgba(0,13,69,0.14); overflow:hidden; display:none; flex-direction:column; }
+  .slide.active { display:flex; }
+  body.fs .slide { border-radius:0; box-shadow:none; }
+  header { padding:40px 64px 0 64px; flex-shrink:0; }
+  .eyebrow { text-transform:uppercase; letter-spacing:0.16em; font-size:13px; color:var(--cyan); font-weight:700; margin-bottom:10px; }
+  h1 { margin:0; font-size:44px; line-height:1.08; font-weight:700; color:var(--navy); letter-spacing:-0.01em; }
+  .subtitle { margin-top:12px; font-size:20px; color:var(--muted); max-width:1360px; line-height:1.4; }
+  .body { flex:1; padding:30px 64px 56px 64px; display:flex; flex-direction:column; justify-content:space-evenly; }
+  .pageno { position:absolute; bottom:18px; right:28px; font-size:13px; color:var(--subtle); }
+  .callout { border-left:4px solid var(--cyan); background:var(--tint); border-radius:0 10px 10px 0; padding:20px 30px; font-size:23px; font-weight:700; color:var(--navy); line-height:1.4; }
+  .frag { opacity:0; transition:opacity .4s ease; }
+  .frag.on { opacity:1; }
+
+  .svc { display:flex; flex-direction:column; align-items:center; gap:9px; width:106px; }
+  .svc .ic { width:54px; height:54px; border-radius:11px; overflow:hidden; flex-shrink:0; line-height:0; }
+  .svc .ic svg { width:100%; height:100%; display:block; }
+  .svc .nm { font-size:13.5px; font-weight:700; color:var(--navy); text-align:center; line-height:1.25; }
+  .svcrow { display:flex; flex-wrap:wrap; gap:22px 14px; }
+
+  /* slide 1 */
+  .lane { display:flex; align-items:flex-start; }
+  .stg { flex:1; display:flex; flex-direction:column; align-items:center; }
+  .stg .dot { width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--primary); }
+  .stg.dim .dot { background:#fff; border:2px dashed var(--line); }
+  .stg h3 { margin:20px 0 8px 0; font-size:23px; color:var(--navy); text-align:center; }
+  .stg p { margin:0; font-size:16.5px; color:var(--muted); text-align:center; line-height:1.45; max-width:250px; }
+  .conn { width:74px; flex-shrink:0; height:4px; border-radius:2px; background:var(--rule); margin-top:33px; }
+  .reslane { display:flex; align-items:center; gap:22px; }
+  .reslane .lab { font-size:14px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--subtle); white-space:nowrap; }
+  .tchip { display:flex; align-items:center; gap:12px; border:1px solid var(--rule); border-radius:9px; padding:11px 20px 11px 11px; background:#fbfcff; }
+  .tchip .ic { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tchip .nm { font-size:16px; font-weight:700; color:var(--navy); }
+  .tchip .sub { font-size:13.5px; color:var(--subtle); font-weight:400; }
+
+  /* slide 2 : concepts */
+  .concepts { display:grid; grid-template-columns:0.82fr auto 1.5fr; gap:40px; align-items:start; }
+  .clh { font-size:15px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:20px; }
+  .clh.ours { color:var(--green); }
+  .clh.theirs { color:var(--primary); }
+  .wcol { display:grid; gap:11px; }
+  .wcol.two { grid-template-columns:1fr 1fr; gap:11px 18px; }
+  .wrow { display:flex; align-items:center; gap:13px; background:var(--tint); border-radius:9px; padding:14px 18px; font-size:17px; font-weight:600; color:var(--navy); line-height:1.3; }
+  .wrow::before { content:""; width:10px; height:10px; border-radius:3px; background:var(--primary); flex-shrink:0; }
+  .wrow.g { background:#f0faf4; }
+  .wrow.g::before { background:var(--green); }
+  .vs { color:var(--line); font-size:15px; font-weight:700; letter-spacing:0.12em; writing-mode:vertical-rl; text-transform:uppercase; align-self:center; }
+
+  /* slide 3 */
+  .lensrow { display:flex; align-items:stretch; }
+  .lens { flex:1; padding:0 28px; border-left:3px solid var(--mid); }
+  .lens:first-child { padding-left:0; border-left:none; }
+  .lens .q { font-size:22px; font-weight:700; color:var(--primary); line-height:1.25; }
+  .qbox { border:2px solid var(--navy); border-radius:12px; padding:24px 32px; background:#fff; }
+  .qbox .lab { font-size:12.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--subtle); margin-bottom:16px; }
+  .qbox p { margin:0; font-size:22.5px; font-weight:700; color:var(--navy); line-height:1.5; }
+  .qbox .hard { background:var(--yellow); padding:2px 10px; border-radius:5px; }
+  .qbox .soft { background:#cfeeff; padding:2px 10px; border-radius:5px; }
+  .flip { margin-top:18px; padding-top:15px; border-top:1px solid var(--rule); font-size:17px; font-weight:400; color:var(--muted); line-height:1.5; }
+  .flip b { color:var(--navy); }
+  .hl { opacity:1 !important; padding:2px 8px; border-radius:5px; background:transparent; transition:background .35s ease; }
+  .hl.on { background:var(--yellow); }
+  .hl.blue.on { background:#cfeeff; }
+  .opts { display:grid; gap:9px; margin-top:18px; }
+  .opt { display:flex; align-items:center; gap:14px; border:1.5px solid var(--rule); border-radius:10px; padding:11px 18px; background:#fff; font-size:18px; color:var(--navy); line-height:1.35; }
+  .opt.hl { opacity:1 !important; padding:11px 18px; border-radius:10px; background:#fff; transition:background .35s ease, border-color .35s ease; }
+  .opt.hl.on { background:#f0faf4; border-color:var(--green); }
+  .opt .let { width:30px; height:30px; border-radius:8px; background:var(--tint); color:var(--primary); font-weight:700; font-size:16.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .opt.hl.on .let { background:var(--green); color:#fff; }
+
+  /* slide 4 */
+  .axe { display:flex; align-items:stretch; justify-content:center; }
+  .axeblock { border-radius:14px; padding:26px 28px 28px; flex:1; box-sizing:border-box; }
+  .axeblock .t { font-size:28px; font-weight:700; margin-bottom:10px; }
+  .axeblock .def { font-size:17.5px; line-height:1.45; color:var(--navy); font-weight:700; margin-bottom:18px; min-height:50px; }
+  .axeblock.navy .def { color:#fff; }
+  .axeblock .svc { width:92px; }
+  .axeblock .svc .ic { width:46px; height:46px; border-radius:10px; }
+  .axeblock .svc .nm { font-size:12.5px; }
+  .pc { display:grid; gap:7px; margin-top:18px; }
+  .pc div { font-size:15.5px; line-height:1.4; color:var(--muted); padding-left:25px; position:relative; }
+  .axeblock.navy .pc div { color:var(--dark-muted); }
+  .pc .pro::before { content:"✓"; position:absolute; left:0; top:-1px; color:var(--green); font-weight:700; font-size:16px; }
+  .pc .con::before { content:"✗"; position:absolute; left:0; top:-1px; color:var(--pink); font-weight:700; font-size:15px; }
+  .axeblock.plain { background:#fbfcff; border:1.5px solid var(--rule); color:var(--navy); }
+  .axeblock.cyan { background:var(--tint); border:2px solid var(--cyan); color:var(--navy); }
+  .axeblock.navy { background:var(--navy); color:#fff; }
+  .axeblock .trig { font-size:17px; margin-top:24px; padding-top:18px; border-top:1px solid var(--rule); color:var(--muted); line-height:1.45; font-style:italic; }
+  .axeblock.navy .trig { color:var(--yellow); border-top-color:#24407c; font-style:normal; font-weight:700; }
+  .axeblock.navy .svc .nm { color:#fff; }
+  .axearrow { display:flex; align-items:center; color:var(--cyan); font-size:34px; font-weight:700; padding:0 22px; }
+  .bandcap { text-align:center; font-size:19px; color:var(--subtle); font-style:italic; }
+
+  .nav { position:fixed; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:10px; z-index:10; }
+  body.fs .nav { display:none; }
+  .nav button { width:12px; height:12px; border-radius:50%; border:none; cursor:pointer; background:#b9c2d8; padding:0; }
+  .nav button.on { background:var(--primary); }
+  .fsbtn { position:fixed; top:16px; right:18px; z-index:20; width:42px; height:42px; border-radius:10px;
+           border:1px solid var(--rule); background:rgba(255,255,255,0.88); color:var(--muted);
+           cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+           opacity:0.45; transition:opacity .2s ease, background .2s ease; }
+  .fsbtn:hover { opacity:1; background:#fff; color:var(--primary); }
+  body.fs .fsbtn { top:14px; right:14px; opacity:0.18; }
+  body.fs .fsbtn:hover { opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+<div class="deck" id="deck">
+
+<!-- ============ SLIDE 1 : context / journey lane ============ -->
+<section class="slide active">
+  <header>
+    <div class="eyebrow">Eyebrow</div>
+    <h1>Headline</h1>
+    <div class="subtitle">One line of framing.</div>
+  </header>
+  <div class="body">
+    <div class="lane">
+      <div class="stg">
+        <div class="dot"><!-- 32px inline svg, stroke #fff --></div>
+        <h3>Stage</h3>
+        <p>One short sentence.</p>
+      </div>
+      <div class="conn"></div>
+      <div class="stg dim">
+        <div class="dot"><!-- dashed variant for a gap / pause --></div>
+        <h3>Stage</h3>
+        <p>One short sentence.</p>
+      </div>
+    </div>
+
+    <div class="reslane">
+      <div class="lab">label</div>
+      <div class="tchip"><div class="ic" style="background:#A435F0"><!-- 19px svg --></div>
+        <div><div class="nm">Thing</div><div class="sub">what it is, briefly</div></div></div>
+    </div>
+  </div>
+  <div class="pageno">1 / N</div>
+</section>
+
+<!-- ============ SLIDE 2 : two clusters, contrast by volume ============ -->
+<section class="slide">
+  <header>
+    <div class="eyebrow">Eyebrow</div>
+    <h1>Headline</h1>
+  </header>
+  <div class="body">
+    <div class="concepts">
+      <div>
+        <div class="clh ours">the small side</div>
+        <div class="wcol">
+          <div class="wrow g">Item</div>
+        </div>
+      </div>
+      <div class="vs">versus</div>
+      <div>
+        <div class="clh theirs">the big side</div>
+        <div class="wcol two">
+          <div class="wrow">Item</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout">The line the contrast is making.</div>
+  </div>
+  <div class="pageno">2 / N</div>
+</section>
+
+<!-- ============ SLIDE 3 : question, revealed in beats ============ -->
+<section class="slide">
+  <header>
+    <div class="eyebrow">Eyebrow</div>
+    <h1>Headline</h1>
+  </header>
+  <div class="body">
+    <div class="lensrow">
+      <div class="lens"><div class="q">Frame<br>one</div></div>
+      <div class="lens"><div class="q">Frame<br>two</div></div>
+    </div>
+    <div class="qbox">
+      <p>Question text, with the deciding detail as
+      <span class="hl frag">a highlight</span> and the qualifier as
+      <span class="hl blue frag">another highlight</span>.</p>
+      <div class="opts">
+        <div class="opt"><div class="let">A</div><div>Plausible but worse</div></div>
+        <div class="opt hl frag"><div class="let">B</div><div>The answer - lights green on reveal</div></div>
+      </div>
+      <div class="flip frag">Change one detail and the answer moves.</div>
+    </div>
+    <div class="callout frag">The takeaway.</div>
+  </div>
+  <div class="pageno">3 / N</div>
+</section>
+
+<!-- ============ SLIDE 4 : spectrum, revealed block by block ============ -->
+<section class="slide">
+  <header>
+    <div class="eyebrow">Eyebrow</div>
+    <h1>Headline</h1>
+    <div class="subtitle">The framing question.</div>
+  </header>
+  <div class="body">
+    <div class="axe">
+      <div class="axeblock plain frag">
+        <div class="t">Left end</div>
+        <div class="def">One bold defining line.</div>
+        <div class="svcrow">
+          <div class="svc"><div class="ic"><!-- official 64x64 svg --></div><div class="nm">Name</div></div>
+        </div>
+        <div class="pc">
+          <div class="pro">Upside</div>
+          <div class="con">Downside</div>
+        </div>
+        <div class="trig">The tell.</div>
+      </div>
+      <div class="axearrow frag">&rarr;</div>
+      <div class="axeblock cyan frag">...</div>
+      <div class="axearrow frag">&rarr;</div>
+      <div class="axeblock navy frag">...</div>
+    </div>
+    <div class="callout frag">An actionable rule, not an observation.</div>
+  </div>
+  <div class="pageno">4 / N</div>
+</section>
+
+</div>
+</div>
+
+<button class="fsbtn" id="fsbtn" title="Full screen (F)" aria-label="Toggle full screen">
+  <svg id="fsicon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/>
+  </svg>
+</button>
+
+<div class="nav" id="nav"></div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const nav = document.getElementById('nav');
+  let cur = 0, fragIndex = 0;
+  slides.forEach((_, i) => { const b = document.createElement('button'); b.onclick = () => show(i, true); nav.appendChild(b); });
+  function frags(s){ return [...s.querySelectorAll('.frag')]; }
+  function show(i, revealAll) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, j) => s.classList.toggle('active', j === cur));
+    [...nav.children].forEach((b, j) => b.classList.toggle('on', j === cur));
+    const f = frags(slides[cur]);
+    if (revealAll) { f.forEach(x => x.classList.add('on')); fragIndex = f.length; }
+    else { f.forEach(x => x.classList.remove('on')); fragIndex = 0; }
+  }
+  function next() {
+    const f = frags(slides[cur]);
+    if (fragIndex < f.length) { f[fragIndex].classList.add('on'); fragIndex++; }
+    else if (cur < slides.length - 1) { show(cur + 1, false); }
+  }
+  function prev() {
+    const f = frags(slides[cur]);
+    if (fragIndex > 0) { fragIndex--; f[fragIndex].classList.remove('on'); }
+    else if (cur > 0) { show(cur - 1, true); }
+  }
+  function fit() {
+    const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
+    const fs = !!document.fullscreenElement;
+    const s = fs ? Math.min(w / 1600, h / 900) : Math.min(w / 1640, (h - 40) / 940);
+    document.getElementById('deck').style.transform = 'scale(' + s + ')';
+  }
+  const EXPAND = '<path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/>';
+  const SHRINK = '<path d="M9 4v4a1 1 0 0 1-1 1H4M15 9V5a1 1 0 0 1 1-1h4M20 15h-4a1 1 0 0 0-1 1v4M4 15h4a1 1 0 0 1 1 1v4"/>';
+  function toggleFs() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  }
+  document.getElementById('fsbtn').onclick = toggleFs;
+  document.addEventListener('fullscreenchange', () => {
+    const on = !!document.fullscreenElement;
+    document.body.classList.toggle('fs', on);
+    document.getElementById('fsicon').innerHTML = on ? SHRINK : EXPAND;
+    document.getElementById('fsbtn').title = on ? 'Exit full screen (F)' : 'Full screen (F)';
+    fit();
+  });
+  new ResizeObserver(fit).observe(document.documentElement);
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { next(); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { prev(); e.preventDefault(); }
+    if (e.key === 'Home') show(0, true);
+    if (e.key === 'End') show(slides.length - 1, true);
+    if (e.key === 'f' || e.key === 'F') toggleFs();
+  });
+  addEventListener('resize', fit);
+  fit(); show(0, false);
+</script>
+
+</body>
+</html>

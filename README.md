@@ -65,7 +65,7 @@ Review / sprint skills:
   approval and merge to a human.
 - `sprint-review-retro` - personal review + retro talking points, mined
   from Claude Code sessions against the live CDT sprint doc.
-- `sprint-demo-slide` - single-page HTML sprint-demo slide in Issei's
+- `presentation-slides` - self-contained HTML slide decks in Issei's
   visual style.
 - `jira-board-hygiene` - surfaces Issei's own CDT board drift (closed-
   sprint stragglers, no-sprint, stale-in-progress) and suggests moves;
@@ -175,7 +175,7 @@ issei-plugin/
 │   ├── pr-review-loop/SKILL.md        # + build.py, references/
 │   ├── pr-review-loop-lite/SKILL.md
 │   ├── sprint-review-retro/SKILL.md
-│   ├── sprint-demo-slide/SKILL.md     # + references/
+│   ├── presentation-slides/SKILL.md   # + references/
 │   ├── jira-board-hygiene/SKILL.md    # scripts in project-autopilot
 │   ├── working-memory/SKILL.md        # Autopilot; scripts in project-autopilot
 │   ├── morning-brief/SKILL.md         # Autopilot
