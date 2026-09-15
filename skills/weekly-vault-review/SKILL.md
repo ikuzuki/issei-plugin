@@ -236,6 +236,21 @@ The scheduling is intentionally light. Daily reviews would be noise
 at this vault size; weekly is the cadence where patterns become
 visible.
 
+## The value model
+
+Read `knowledge-vault/voice/what-matters.md` before writing the report. The
+patterns-and-themes and distil-candidate sections in particular should be
+filtered by its kind axis, not by how much activity a topic generated: a theme
+earns a paragraph when it changed a decision, a mechanism, a boundary or a
+belief, and a distil candidate earns a line when a defence card could be
+written about it. Run the ruthless-cut test over the finished report. A
+review that names two things worth distilling is a good review.
+
+This review is read-only and has become something Issei skims and stamps.
+Retrieval belongs to `defence-quiz`, not here; do not add quiz questions to
+this report. Do point at `cards/` when a distil candidate is really a missing
+card.
+
 ## Anti-patterns
 
 - **Writing to the *curated* vault.** Read-only there, always. Even

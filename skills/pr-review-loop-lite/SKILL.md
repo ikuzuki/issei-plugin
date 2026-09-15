@@ -139,9 +139,14 @@ loop (`pr-review-loop`), which is what its history specialist is for.
 
 **Ingest replies to prior comments - do not re-raise settled points.** On any PR
 the loop has reviewed before (`reviewed_before: true`), fetch the full threaded
-conversation via `gh api repos/curveanalytics/<repo>/pulls/<n>/comments` (this
-returns author replies to the loop's own review comments, not just top-level
-reviews) and feed it to the review. This is cheap and mandatory - it is also what
+conversation and feed it to the review. **Three endpoints, not one** -
+`pulls/<n>/comments` returns *inline* review comments only, so a rebuttal the
+author posted as a top-level PR comment is invisible to it, which is exactly how
+a settled point gets re-raised. Fetch all three and merge them chronologically:
+`gh api repos/curveanalytics/<repo>/pulls/<n>/comments` (inline comments and
+replies), `.../issues/<n>/comments` (top-level PR comments, where an author most
+often answers a whole review at once) and `.../pulls/<n>/reviews` (review bodies,
+including the loop's own prior verdicts). This is cheap and mandatory - it is also what
 covers the recurring-review-point value that the base loop's history specialist
 provides. A point the
 author has rebutted with a concrete reason is **settled**: drop it. Re-raise only

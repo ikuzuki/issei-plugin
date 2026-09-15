@@ -64,6 +64,15 @@ Session and other-session: three to five sections, eight to fourteen bullets tot
 
 Cutting is nearly always the fix. When two points compete for a slot, keep the one that changes a decision.
 
+## The value model
+
+`Knowledge Base/knowledge-vault/voice/what-matters.md` is the shared value
+model for every summarising skill; read it when the session being summarised
+is work rather than a one-off question. Its kind axis (decisions and mechanisms
+over events, changed beliefs over confirmed ones) is how to choose between two
+bullets competing for a slot, and its ruthless-cut test is the last pass
+before delivering.
+
 ## What never earns a bullet
 
 - Chronology. "First I did X, then Y." He wants the state, not the path to it.

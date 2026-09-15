@@ -220,10 +220,18 @@ PRs, review only the incremental diff.
 author has already answered.** On any PR the loop has reviewed before, the
 author will have replied to the loop's earlier comments. Before composing, fetch
 those threads in full - including the author's replies to the loop's own review
-comments (`gh api repos/<owner>/<repo>/pulls/<n>/comments`, which returns the
-threaded conversation, not just the top-level review) - and feed them to the
-review sub-agents as required context. A point the author has rebutted with a
-concrete reason is **settled**: drop it. Re-raise only if there is genuinely new
+comments - and feed them to the review sub-agents as required context.
+
+**Three endpoints, not one.** `pulls/<n>/comments` returns *inline* review
+comments only, so a rebuttal the author posted as a top-level PR comment is
+invisible to it - which is exactly how a settled point gets re-raised. Fetch all
+three and merge them chronologically:
+
+* `gh api repos/<owner>/<repo>/pulls/<n>/comments` - inline review comments and replies
+* `gh api repos/<owner>/<repo>/issues/<n>/comments` - top-level PR comments, where an author most often answers a whole review at once
+* `gh api repos/<owner>/<repo>/pulls/<n>/reviews` - review bodies, including the loop's own prior verdicts
+
+A point the author has rebutted with a concrete reason is **settled**: drop it. Re-raise only if there is genuinely new
 evidence the rebuttal is wrong, and if so, engage with the rebuttal explicitly
 rather than restating the original comment. Re-stating a settled point as though
 it were fresh is the most common failure of an unattended re-review and erodes

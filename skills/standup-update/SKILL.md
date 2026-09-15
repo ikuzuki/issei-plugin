@@ -198,10 +198,10 @@ pasteable into Teams. Shape:
 **Standup — YYYY-MM-DD**
 
 Yesterday
-- <one bullet per coherent piece of work, project-tagged where it helps>
+- **<The claim, as a short sentence.>** <One or two sentences of why it matters or what it changed.> (<ticket keys and PR links, last>)
 
 Today
-- <in-flight from yesterday + open PRs awaiting review>
+- **<What will be true by tonight.>** <detail if needed>
 
 Blockers
 - <real blockers only, or omit the section>
@@ -210,6 +210,34 @@ Blockers
 The date in the header is today's date - this is the standup *for*
 today, summarising work done since the last one. No preamble, no
 postamble, no closing line. Just the block.
+
+### The bold lead
+
+Every Yesterday and Today bullet opens with a bold claim of a few words
+that a skim reader could stop at: "Gold now serves a post's attributions
+from a single run." Not a label ("Gold build"), not a ticket key, not a
+PR title. The plain text after it carries the why. Ticket keys and PR
+links close the bullet in parentheses and never appear in the bold; he
+cannot map a key to its meaning from memory and the lead has to stand
+without one.
+
+### Authored versus reviewed
+
+Authored PRs are his work and read in the first person. Reviewed PRs are
+someone else's and read as a review bullet, named ("Reviewed Adele's
+dispatch series") and only when the review changed something or the merge
+unblocks him. A count of reviews is never a bullet. If a PR he authored
+was raised on a teammate's behalf, the Jira assignee is the tiebreak.
+
+### Roll-ups for PR-heavy days
+
+When a day is mostly tech debt or a batch of small PRs, one bullet, not
+one per ticket: "**Cleared six tech-debt tickets** across the dispatch
+path and the loaders: ECS launch contract as a list, boto3 session pin,
+retired output_uri assertions, and three more (links)." Name the two or
+three that a teammate might recognise, count the rest, and link them all.
+A day of twelve small merges is one bullet with a long parenthesis, never
+twelve bullets.
 
 ### Substance, not labels
 
@@ -242,6 +270,16 @@ Terse, lowercase-friendly, British English, no em-dashes (use ` - `),
 no corporate-speak, no "I successfully completed" / "I worked on".
 State what shipped or moved. Consult the `issei-voice` skill if
 phrasing feels off.
+
+## The value model
+
+Before shaping the Yesterday block, read
+`Knowledge Base/knowledge-vault/voice/what-matters.md`. It fixes the axis this
+skill's substance rule misses: descriptive English about the wrong kind of work
+is still noise. Decisions, new mechanisms, moved contracts and changed beliefs
+earn a bullet; bugs, chores, lock bumps and CI fixes do not, even when they ate
+the afternoon. After drafting, run its ruthless-cut test over every bullet and
+delete what fails. Two honest bullets beat six complete ones.
 
 ## Anti-patterns
 

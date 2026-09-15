@@ -121,6 +121,15 @@ drawn from the queues - clear a re-review, progress a ticket, answer a review
 request - with a one-line why each. Flag what's blocked on others (chase, don't
 sit on) vs blocked on Issei (the real work). Propose; he decides.
 
+## 4b. Cards, Tuesday and Thursday
+
+On those two days, after the brief is delivered and before proposing the deep
+block, say one line: three defence cards are due, fifteen minutes, run
+`defence-quiz` now or after standup. This is the retrieval habit anchored to
+the morning rather than a Friday afternoon he will skip. On other days say
+nothing about cards unless he asks or `python cards.py stats` shows more than
+ten overdue, in which case mention the count once.
+
 ## 5. Offer to chain (don't auto-run)
 
 End by offering the obvious next action, gated on his word:

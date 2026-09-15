@@ -225,6 +225,18 @@ reasoning; bullets where it's genuinely a list. This is shipping/
 discussion evidence, not a session inventory - if there's no substance
 for a thread, drop it.
 
+## The value model
+
+The altitude rule in step 3 is personal versus team. It is necessary and not
+sufficient: "one bug blocked us for half a day" is team-altitude and still
+worthless in the room, because it is an event. Before synthesising, read
+`Knowledge Base/knowledge-vault/voice/what-matters.md` for the second axis,
+kind: decisions and mechanisms over events, changed beliefs over confirmed
+ones, cross-component over within-component. After drafting every section,
+run its ruthless-cut test line by line and delete what fails. A retro card that
+survives both axes is worth bringing; one that survives only the first is
+filler.
+
 ## Anti-patterns
 
 - **Staying at personal-task altitude.** "I cleaned up my branch" is not
