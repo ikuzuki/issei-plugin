@@ -100,7 +100,7 @@ if f_due:
 if q:
     view = [r for r in view if q.lower() in str(r.get("question", "")).lower()]
 
-tab_browse, tab_quiz, tab_heat = st.tabs(["Browse", "Self-quiz", "Heatmap"])
+tab_quiz, tab_browse, tab_heat = st.tabs(["Self-quiz", "Browse", "Heatmap"])
 
 with tab_heat:
     st.caption(f"{len(rows)} cards, {sum(1 for r in rows if (C.as_date(r.get('next_due')) or today) <= today)} due, "
@@ -186,10 +186,16 @@ with tab_browse:
 
 with tab_quiz:
     st.caption("Same arithmetic as the chat quiz. Answer out loud or on paper, reveal, then mark yourself honestly.")
-    due = sorted(
-        [r for r in view if (C.as_date(r.get("next_due")) or today) <= today] or view,
-        key=lambda r: (C.as_date(r.get("next_due")) or today, int(r.get("tested") or 0), r["id"]),
-    )[:3]
+    pool = [r for r in view if (C.as_date(r.get("next_due")) or today) <= today] or view
+    if "quiz_ids" not in st.session_state or st.session_state.get("quiz_pool_size") != len(pool):
+        chosen = C.pick([(C.as_date(r.get("next_due")) or today, int(r.get("tested") or 0), r) for r in pool], 3)
+        st.session_state["quiz_ids"] = [r["id"] for r in chosen]
+        st.session_state["quiz_pool_size"] = len(pool)
+    by_id = {r["id"]: r for r in pool}
+    due = [by_id[i] for i in st.session_state["quiz_ids"] if i in by_id]
+    if st.button("Shuffle"):
+        st.session_state.pop("quiz_ids", None)
+        st.rerun()
     if not due:
         st.info("Nothing matches the filter.")
     for r in due:

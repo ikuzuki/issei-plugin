@@ -62,6 +62,35 @@ def as_date(v) -> dt.date | None:
     return dt.date.fromisoformat(str(v)[:10])
 
 
+def pick(rows: list[tuple], n: int) -> list[dict]:
+    """Soonest due first, fewest tests next, then a shuffle, spread across areas.
+
+    rows are (due_date, tested, fm). Ties are broken randomly rather than by
+    id so a fresh deck does not come out alphabetically, and the greedy pass
+    prefers an area not yet picked so three cards are three topics.
+    """
+    import random
+
+    rows = sorted(rows, key=lambda r: (r[0], r[1], random.random()))
+    picked: list[dict] = []
+    seen_areas: set[str] = set()
+    for _, _, fm in rows:
+        if len(picked) >= n:
+            break
+        if fm.get("area") in seen_areas:
+            continue
+        picked.append(fm)
+        seen_areas.add(fm.get("area"))
+    if len(picked) < n:
+        chosen = {fm["id"] for fm in picked}
+        for _, _, fm in rows:
+            if len(picked) >= n:
+                break
+            if fm["id"] not in chosen:
+                picked.append(fm)
+    return picked
+
+
 def cmd_due(a: argparse.Namespace) -> None:
     today = dt.date.today()
     rows = []
@@ -78,8 +107,7 @@ def cmd_due(a: argparse.Namespace) -> None:
         if a.only_overdue and due > today:
             continue
         rows.append((due, int(fm.get("tested") or 0), fm))
-    rows.sort(key=lambda r: (r[0], r[1], r[2]["id"]))
-    picked = [r[2] for r in rows[: a.n]]
+    picked = pick(rows, a.n)
     if a.json:
         print(json.dumps(picked, default=str, indent=2))
         return
