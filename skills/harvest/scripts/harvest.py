@@ -68,6 +68,8 @@ WORK_CWD_FRAGMENTS = [
     "/intech-api", "/intech-data", "/intech-enrich", "/intech-enrich-poc",
     "/intech-etl", "/intech-hub", "/intech-utils", "/intech-ai-plugin",
     "/intech-meta", "/intech-cicd", "/intech-infra",
+    "/intech-transform", "/intech-compute-plane", "/intech-control-plane",
+    "/intech-experience", "/intech-models", "/intech-ingest", "/intech-ddt",
     "/curve-daas", "/curve-hub", "/curve-hackathon",
     "/claude/claudemaxing", "/knowledge base",
     "/projects/intech", "/sandbox",
@@ -761,6 +763,7 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 _TOOL_INPUT_PREVIEW = 240
 _BODY_TURN_LIMIT = 4000     # per turn, chars
 _TOTAL_FILE_LIMIT = 200_000  # per file, chars; hard cap to keep files readable
+_TRUNCATION_NOTE_RESERVE = 200  # chars held back for the dropped-turns note
 
 
 def _slugify(s: str, limit: int = 40) -> str:
@@ -945,25 +948,28 @@ def write_session_reference(thread: dict, reference_root: Path) -> Path | None:
 
     # Walk events across all constituent sessions, oldest first.
     rendered_chunks: list[str] = []
-    chars = sum(len(s) for s in lines)
-    truncated = False
     for path in paths:
         rendered_chunks.append(f"\n---\n\n*From `{path.name}`*\n")
         for ev in _read_session_events(path):
             chunk = _render_event(ev)
-            if not chunk:
-                continue
-            if chars + len(chunk) > _TOTAL_FILE_LIMIT:
-                truncated = True
-                break
-            rendered_chunks.append(chunk)
-            chars += len(chunk)
-        if truncated:
-            rendered_chunks.append(
-                "\n*[truncated — file exceeded 200k chars; full source in "
-                "`source_paths` frontmatter]*\n"
-            )
-            break
+            if chunk:
+                rendered_chunks.append(chunk)
+
+    # Over the cap, drop from the oldest end. A long-running thread's recent
+    # turns are what a weekly review needs; dropping the tail loses exactly
+    # the week being reviewed.
+    budget = _TOTAL_FILE_LIMIT - sum(len(s) for s in lines) - _TRUNCATION_NOTE_RESERVE
+    chars = sum(len(s) for s in rendered_chunks)
+    dropped = 0
+    while chars > budget and rendered_chunks:
+        chars -= len(rendered_chunks.pop(0))
+        dropped += 1
+    if dropped:
+        rendered_chunks.insert(
+            0,
+            f"\n*[truncated — {dropped} earlier turns dropped to fit 200k chars; "
+            "full source in `source_paths` frontmatter]*\n",
+        )
 
     body = "\n".join(lines) + "\n".join(rendered_chunks)
     out_path.write_text(body, encoding="utf-8")
