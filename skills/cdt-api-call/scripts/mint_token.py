@@ -13,8 +13,9 @@ The caller identity is synthetic. Token validation does no database lookup, so
 role guard gates on, and the metric write routes want ``internal_admin`` or
 ``internal_analyst``.
 
-DEV ONLY, and it reads a private signing key from SSM: point it at a dev profile,
-keep the TTL short, and never log or persist the returned value.
+It reads a private signing key from SSM in whichever account ``AWS_PROFILE`` names:
+dev by default, staging or prod only with explicit confirmation. Keep the TTL short,
+and never log or persist the returned value.
 
 Requires ``python-jose`` and ``boto3`` - run it with a repo venv rather than a bare
 interpreter (the sibling scripts are stdlib-only; this one cannot be, since stdlib
@@ -43,6 +44,7 @@ import argparse
 import base64
 import json
 import os
+import uuid
 from datetime import UTC, datetime, timedelta
 
 SSM_PREFIX = "/cdt/cdt-control-plane"
@@ -55,7 +57,6 @@ AWS_REGION = os.environ.get("AWS_REGION", "eu-west-2")
 
 # Synthetic caller identity. Validation does no lookup, so these need not exist.
 DEFAULT_USER_ID = "local-tooling"
-DEFAULT_TENANT_ID = "local"
 DEFAULT_ROLE = "internal_admin"
 DEFAULT_TTL_MINUTES = 15
 
@@ -105,7 +106,7 @@ def _ssm_values(region: str) -> tuple[str, str, str, str]:
 
 def mint_token(
     role: str = DEFAULT_ROLE,
-    tenant_id: str = DEFAULT_TENANT_ID,
+    tenant_id: str | None = None,
     ttl_minutes: int = DEFAULT_TTL_MINUTES,
     region: str = AWS_REGION,
     user_id: str = DEFAULT_USER_ID,
@@ -116,8 +117,9 @@ def mint_token(
     ----------
     role : str
         Role claim the role guard gates on, e.g. ``internal_admin``.
-    tenant_id : str
-        Tenant claim. Synthetic unless a route enforces tenant ownership.
+    tenant_id : str or None
+        Tenant claim; must be a canonical UUID4 or the control plane 401s. None
+        mints a random one, which suits routes that don't enforce tenant ownership.
     ttl_minutes : int
         Lifetime. Keep it just long enough for the run.
     region : str
@@ -142,7 +144,7 @@ def mint_token(
         "iss": issuer,
         "aud": audience,
         "sub": user_id,
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id or str(uuid.uuid4()),
         "role": role,
         "token_use": "access",
         "name": "Local Tooling",
@@ -164,7 +166,7 @@ def _claims(token: str) -> dict:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Mint a dev platform JWT.")
     parser.add_argument("--role", default=DEFAULT_ROLE)
-    parser.add_argument("--tenant", default=DEFAULT_TENANT_ID)
+    parser.add_argument("--tenant", default=None, help="UUID4; random if omitted")
     parser.add_argument("--ttl", type=int, default=DEFAULT_TTL_MINUTES, help="minutes")
     parser.add_argument(
         "--claims",
