@@ -138,5 +138,5 @@ One line, no recap, no questions-invitation:
 Teams is the target surface. It renders bullets, bold, links and emoji reliably;
 tables, headings and code fences inconsistently. So: bullets and links only.
 British English. No em dashes - ` - ` instead. No "just", no "feel free to", no
-"happy to discuss", no "let me know if". Lowercase-friendly is fine in the
-wrapper prose but the bullets read better sentence-cased.
+"happy to discuss", no "let me know if". Sentence case throughout, in the
+wrapper prose and the bullets alike.

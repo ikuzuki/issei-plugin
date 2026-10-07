@@ -266,7 +266,7 @@ standup is shipping evidence, not session inventory.
 
 ### Voice
 
-Terse, lowercase-friendly, British English, no em-dashes (use ` - `),
+Terse, sentence case, British English, no em-dashes (use ` - `),
 no corporate-speak, no "I successfully completed" / "I worked on".
 State what shipped or moved. Consult the `issei-voice` skill if
 phrasing feels off.

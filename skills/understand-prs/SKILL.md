@@ -298,7 +298,7 @@ is worse than an empty one.
 
 ### 8. Draft comments in voice
 
-Conversational by default - short, direct, lowercase fine, British English, no em
+Conversational by default - short, direct, sentence case, British English, no em
 dashes (` - ` instead), no apology, no "happy to discuss", no preamble, no
 summary at the bottom.
 
@@ -352,7 +352,7 @@ review in the delta, it's a main merge. What's outstanding is your completeness
 comment from the 24th, still unanswered." An empty delta is a common and useful
 outcome, not a dead end.
 
-**Reviewer mode (someone else's PR).** Fixed → brief acknowledgement ("ah true
+**Reviewer mode (someone else's PR).** Fixed → brief acknowledgement ("Ah true
 yeah good point") or resolve silently. Pushed back → re-engage only with genuinely
 new reasoning, engaging their argument explicitly. Fix claimed but not in the
 delta → "has this landed? not seeing it in the latest push". New issues → fresh
@@ -373,7 +373,7 @@ with comments. Never merge.
 
 - **Short corrective** when the fix is obvious. "Think this should be
   `category_context=category_context`" - no preamble.
-- **Question form when ~80% sure.** "we probably dont need this check?"
+- **Question form when ~80% sure.** "We probably don't need this check?"
 - **Position, reasoning, and what it means for the PR.** Never leave an
   architectural opinion hanging without a PR-shaped path.
 - **"X scares me"** for "this looks risky", in plain language.
