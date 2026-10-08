@@ -38,7 +38,7 @@ REPOS = [
 TEAM = {
     "adele-curve": "Adele", "Issei-curve": "Issei", "seanc-curve": "Sean",
     "nik10-mah": "Nikhil", "Luke-curve": "Luke", "J-Curwell": "James",
-    "VISHAL87KUMAR": "Vishal",
+    "VISHAL87KUMAR": "Vishal", "leo-tapie": "Leo", "chunkymozzer": "Matt",
 }
 
 RELEASE_BOTS = {"release-please[bot]", "github-actions[bot]"}
